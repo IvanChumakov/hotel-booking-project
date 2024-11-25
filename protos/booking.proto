@@ -1,0 +1,19 @@
+syntax = "proto3";
+option go_package = "./;hotelbooking";
+
+message RoomData {
+  int32 room_number = 1;
+  int32 price = 2;
+}
+
+message RoomsDataArray {
+  repeated RoomData room_data = 1;
+}
+
+message HotelData {
+  string hotel_name = 1;
+}
+
+service Booking {
+  rpc GetHotelData(HotelData) returns (RoomsDataArray);
+}
