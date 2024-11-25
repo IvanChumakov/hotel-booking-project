@@ -74,16 +74,45 @@ func GetFreeRoomsByDate(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	rooms, err := services.GetFreeRooms(booking)
+	rooms, err := services.GetHotelRoomsWithPrice(booking)
+	freeRooms, err := services.FilterRooms(booking, rooms)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(rooms)
+	err = json.NewEncoder(w).Encode(freeRooms)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func AddBooking(w http.ResponseWriter, r *http.Request) {
+	log.Print("/add_booking")
+	if http.MethodPost != r.Method {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var booking database.Booking
+	err = json.Unmarshal(data, &booking)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	err = services.MakePaymentOperation(booking)
+	if err != nil {
+		http.Error(w, "Failed to make payment operation", http.StatusInternalServerError)
+		return
+	}
+	err = services.AddBooking(booking)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }

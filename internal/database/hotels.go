@@ -12,9 +12,9 @@ type Hotels struct {
 }
 
 type Room struct {
-	Id         uuid.UUID `json:"id"`
+	Id         uuid.UUID `json:"id,omitempty"`
 	Price      int       `json:"price"`
-	HotelId    uuid.UUID `json:"hotel_id"`
+	HotelId    uuid.UUID `json:"hotel_id,omitempty"`
 	RoomNumber int       `json:"room_number"`
 }
 
