@@ -42,8 +42,8 @@ func main() {
 		}
 	}()
 
-	grpcPort, _ := os.LookupEnv("PORT")
-	lis, err := net.Listen("tcp", grpcPort)
+	//grpcPort, _ := os.LookupEnv("PORT")
+	lis, err := net.Listen("tcp", "hotel-service:50051")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
