@@ -37,7 +37,7 @@ func GetAllBookings() ([]Booking, error) {
 	query := NewSqlBuilder()
 	query = query.Select(make([]string, 0)).From("bookings")
 
-	db, err := InitConnection("bookings")
+	db, err := InitConnection("hotel-bookings")
 	if err != nil {
 		log.Fatal("database connection error")
 		return nil, err
@@ -64,7 +64,7 @@ func GetBookingsByHotelName(hotelName string) ([]Booking, error) {
 	query := NewSqlBuilder()
 	query = query.Select(make([]string, 0)).From("bookings").Where(fmt.Sprintf("hotel_name = '%s'", hotelName))
 
-	db, err := InitConnection("bookings")
+	db, err := InitConnection("hotel-bookings")
 	if err != nil {
 		log.Fatal("database connection error")
 		return nil, err
@@ -96,7 +96,7 @@ func AddBooking(booking Booking) error {
 		uuid.NewString(), booking.HotelName, booking.RoomNumber, fromParsed, toParsed)).
 		Returning("id")
 
-	db, err := InitConnection("bookings")
+	db, err := InitConnection("hotel-bookings")
 	if err != nil {
 		return err
 	}

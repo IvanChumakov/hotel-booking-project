@@ -13,7 +13,7 @@ type Database struct {
 }
 
 func InitConnection(database string) (*Database, error) {
-	conn := fmt.Sprintf("host=localhost port=5432 user=postgres password=pgpwd4habr dbname=%s sslmode=disable", database)
+	conn := fmt.Sprintf("host=localhost port=5432 user=username password=1234 dbname=%s sslmode=disable", database)
 	db, err := sql.Open("postgres", conn)
 	if err != nil {
 		return nil, err

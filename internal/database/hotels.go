@@ -25,7 +25,7 @@ func GetAllHotels() (map[uuid.UUID]*Hotels, error) {
 		From("hotels").
 		Join("rooms", "h.id = r.hotel_id")
 
-	db, err := InitConnection("hotel-booking")
+	db, err := InitConnection("hotel-bookings")
 	if err != nil {
 		return make(map[uuid.UUID]*Hotels), err
 	}
@@ -65,7 +65,7 @@ func AddHotel(hotel Hotels) error {
 	query = query.CustomQuery(fmt.Sprintf("insert into hotels (id, name) "+
 		"values ('%s', '%s')", uuid.NewString(), hotel.Name)).Returning("id")
 
-	db, err := InitConnection("hotel-booking")
+	db, err := InitConnection("hotel-bookings")
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func GetRoomsByName(name string) ([]Room, error) {
 		Join("rooms", "h.id = r.hotel_id").
 		Where(fmt.Sprintf("name = '%s'", name))
 
-	db, err := InitConnection("hotel-booking")
+	db, err := InitConnection("hotel-bookings")
 	if err != nil {
 		return nil, err
 	}

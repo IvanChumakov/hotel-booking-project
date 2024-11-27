@@ -6,6 +6,7 @@ networks:
 
 volumes:
   redpanda-0: null
+  postgres_data:
 
 services:
   redpanda-0:
@@ -54,19 +55,22 @@ services:
             enabled: true
             urls: ["http://redpanda-0:9644"]
     ports:
-      - 8000:8080
+      - "8000:8080"
     depends_on:
       - redpanda-0
 
-  db:
-    image: postgres:latest
+  postgres:
+    image: postgres:14.8-alpine3.18
     environment:
-      POSTGRES_USER: username
-      POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: postgres_database
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: "hotel-bookings"
+      POSTGRES_USER: "username"
+      POSTGRES_PASSWORD: "1234"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
     volumes:
-      - ./data/postgresql:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - hotel-booking-network
+    ports:
+      - "5432:5432"
+

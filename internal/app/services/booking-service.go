@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"hotel-booking/internal/app/handlers"
 	"hotel-booking/internal/database"
 	pb "hotel-booking/protos"
 	"log"
@@ -16,6 +15,10 @@ import (
 	"os"
 	"time"
 )
+
+type PaymentInfo struct {
+	Price int `json:"price"`
+}
 
 func GetAllBookings() ([]database.Booking, error) {
 	return database.GetAllBookings()
@@ -94,7 +97,7 @@ func MakePaymentOperation(booking database.Booking) error {
 			break
 		}
 	}
-	paymentInfo := handlers.PaymentInfo{
+	paymentInfo := PaymentInfo{
 		Price: finalPrice,
 	}
 	jsonData, err := json.Marshal(paymentInfo)

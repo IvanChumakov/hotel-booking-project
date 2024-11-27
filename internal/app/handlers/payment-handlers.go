@@ -3,15 +3,12 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/json"
+	"hotel-booking/internal/app/services"
 	"io"
 	"math"
 	"math/big"
 	"net/http"
 )
-
-type PaymentInfo struct {
-	Price int `json:"price"`
-}
 
 func MakeOperation(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
@@ -24,7 +21,7 @@ func MakeOperation(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	var paymentInfo PaymentInfo
+	var paymentInfo services.PaymentInfo
 	err = json.Unmarshal(data, &paymentInfo)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
