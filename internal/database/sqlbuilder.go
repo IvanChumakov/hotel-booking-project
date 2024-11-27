@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
+	"log"
 	"strings"
 )
 
@@ -13,11 +14,12 @@ type Database struct {
 }
 
 func InitConnection(database string) (*Database, error) {
-	conn := fmt.Sprintf("host=localhost port=5432 user=username password=1234 dbname=%s sslmode=disable", database)
+	conn := fmt.Sprintf("host=postgres port=5432 user=username password=1234 dbname=%s sslmode=disable", database)
 	db, err := sql.Open("postgres", conn)
 	if err != nil {
 		return nil, err
 	}
+	log.Print("connected to database")
 	return &Database{
 		db: db,
 	}, nil
@@ -35,6 +37,7 @@ func (d *Database) Insert(sqlBuilder *SqlBuilder) (uuid.UUID, error) {
 	var id uuid.UUID
 	err := d.db.QueryRow(sqlBuilder.query).Scan(&id)
 	if err != nil {
+		log.Print(err.Error())
 		return uuid.Nil, err
 	}
 	return id, nil

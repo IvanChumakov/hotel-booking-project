@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"log"
 )
 
 type Hotels struct {
@@ -70,11 +71,13 @@ func AddHotel(hotel Hotels) error {
 		return err
 	}
 	defer db.Close()
+	log.Print(query.query)
 
 	hotelId, err := db.Insert(query)
 	if err != nil {
 		return err
 	}
+	log.Print("inserted data")
 	for _, room := range hotel.Rooms {
 		query.Clear()
 		query = query.CustomQuery(fmt.Sprintf("insert into rooms (id, price, hotel_id, room_number) values ('%s', %d, '%s', %d)",

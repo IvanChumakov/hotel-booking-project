@@ -74,3 +74,16 @@ services:
     ports:
       - "5432:5432"
 
+  hotel-service:
+    build:
+      context: .
+      dockerfile: ./cmd/HotelService/Dockerfile
+    volumes:
+      - .:/code
+    ports:
+      - "8081:8081"
+    networks:
+      - hotel-booking-network
+    depends_on:
+      - postgres
+
