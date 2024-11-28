@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
-	"hotel-booking/internal/app/services"
-	"hotel-booking/internal/database"
+	"github.com/IvanChumakov/hotel-booking-project/internal/app/services"
+	"github.com/IvanChumakov/hotel-booking-project/internal/models"
 	"io"
 	"log"
 	"net/http"
@@ -38,7 +38,7 @@ func GetBookingsByName(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
-	var hotel database.Hotels
+	var hotel models.Hotels
 	err = json.Unmarshal(data, &hotel)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -68,7 +68,7 @@ func GetFreeRoomsByDate(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	var booking database.Booking
+	var booking models.Booking
 	err = json.Unmarshal(data, &booking)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -100,7 +100,7 @@ func AddBooking(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	var booking database.Booking
+	var booking models.Booking
 	err = json.Unmarshal(data, &booking)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -111,6 +111,7 @@ func AddBooking(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to make payment operation: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	err = services.SendNotification(booking)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -125,7 +126,7 @@ func PaymentCallBack(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	var paymentInfo services.PaymentInfo
+	var paymentInfo models.PaymentInfo
 	err = json.Unmarshal(body, &paymentInfo)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

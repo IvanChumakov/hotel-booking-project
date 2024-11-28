@@ -2,24 +2,12 @@ package database
 
 import (
 	"fmt"
+	"github.com/IvanChumakov/hotel-booking-project/internal/models"
 	"github.com/google/uuid"
 	"log"
 )
 
-type Hotels struct {
-	Id    uuid.UUID `json:"id"`
-	Name  string    `json:"name"`
-	Rooms []Room    `json:"room"`
-}
-
-type Room struct {
-	Id         uuid.UUID `json:"id,omitempty"`
-	Price      int       `json:"price"`
-	HotelId    uuid.UUID `json:"hotel_id,omitempty"`
-	RoomNumber int       `json:"room_number"`
-}
-
-func GetAllHotels() (map[uuid.UUID]*Hotels, error) {
+func GetAllHotels() (map[uuid.UUID]*models.Hotels, error) {
 	query := NewSqlBuilder()
 	query = query.
 		Select(make([]string, 0)).
@@ -28,31 +16,31 @@ func GetAllHotels() (map[uuid.UUID]*Hotels, error) {
 
 	db, err := InitConnection("hotel-bookings")
 	if err != nil {
-		return make(map[uuid.UUID]*Hotels), err
+		return make(map[uuid.UUID]*models.Hotels), err
 	}
 	defer db.Close()
 
 	rows, err := db.GetAll(query)
 	if err != nil {
-		return make(map[uuid.UUID]*Hotels), err
+		return make(map[uuid.UUID]*models.Hotels), err
 	}
 
-	hotelsMap := make(map[uuid.UUID]*Hotels)
+	hotelsMap := make(map[uuid.UUID]*models.Hotels)
 
 	for rows.Next() {
-		var hotel Hotels
-		var room Room
+		var hotel models.Hotels
+		var room models.Room
 		err = rows.Scan(&hotel.Id, &hotel.Name, &room.Id, &room.Price, &room.HotelId, &room.RoomNumber)
 
 		if room.HotelId == uuid.Nil {
 			hotelsMap[hotel.Id] = &hotel
-			hotelsMap[hotel.Id].Rooms = make([]Room, 0)
+			hotelsMap[hotel.Id].Rooms = make([]models.Room, 0)
 			continue
 		}
 
 		if _, ok := hotelsMap[hotel.Id]; !ok {
 			hotelsMap[hotel.Id] = &hotel
-			hotelsMap[hotel.Id].Rooms = []Room{room}
+			hotelsMap[hotel.Id].Rooms = []models.Room{room}
 		} else {
 			hotelsMap[hotel.Id].Rooms = append(hotelsMap[hotel.Id].Rooms, room)
 		}
@@ -61,7 +49,7 @@ func GetAllHotels() (map[uuid.UUID]*Hotels, error) {
 	return hotelsMap, nil
 }
 
-func AddHotel(hotel Hotels) error {
+func AddHotel(hotel models.Hotels) error {
 	query := NewSqlBuilder()
 	query = query.CustomQuery(fmt.Sprintf("insert into hotels (id, name) "+
 		"values ('%s', '%s')", uuid.NewString(), hotel.Name)).Returning("id")
@@ -91,7 +79,7 @@ func AddHotel(hotel Hotels) error {
 	return nil
 }
 
-func GetRoomsByName(name string) ([]Room, error) {
+func GetRoomsByName(name string) ([]models.Room, error) {
 	query := NewSqlBuilder()
 	query = query.
 		Select([]string{"r.room_number", "r.price"}).
@@ -109,9 +97,9 @@ func GetRoomsByName(name string) ([]Room, error) {
 	if err != nil {
 		return nil, err
 	}
-	rooms := make([]Room, 0)
+	rooms := make([]models.Room, 0)
 	for rows.Next() {
-		var room Room
+		var room models.Room
 		err = rows.Scan(&room.RoomNumber, &room.Price)
 
 		rooms = append(rooms, room)

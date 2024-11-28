@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/IvanChumakov/hotel-booking-project/internal/app/handlers"
 	"github.com/joho/godotenv"
-	"hotel-booking/internal/app/handlers"
 	"log"
 	"net/http"
 	"os"

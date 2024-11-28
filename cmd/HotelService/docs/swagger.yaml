@@ -1,5 +1,5 @@
-basePath: /v2
-host: petstore.swagger.io
+basePath: /
+host: localhost:8081
 info:
   contact:
     email: support@swagger.io

@@ -2,8 +2,9 @@ package services
 
 import (
 	"context"
-	"hotel-booking/internal/database"
-	pb "hotel-booking/protos"
+	"github.com/IvanChumakov/hotel-booking-project/internal/database"
+	"github.com/IvanChumakov/hotel-booking-project/internal/models"
+	pb "github.com/IvanChumakov/hotel-booking-project/protos"
 )
 
 type Server struct {
@@ -33,23 +34,23 @@ func (s *Server) GetHotelData(_ context.Context, hotelData *pb.HotelData) (*pb.R
 	return &roomsDataArr, nil
 }
 
-func GetAllHotels() ([]database.Hotels, error) {
+func GetAllHotels() ([]models.Hotels, error) {
 	hotels, err := database.GetAllHotels()
 	if err != nil {
 		return nil, err
 	}
 
-	hotelsArr := make([]database.Hotels, 0)
+	hotelsArr := make([]models.Hotels, 0)
 	for _, value := range hotels {
 		hotelsArr = append(hotelsArr, *value)
 	}
 	return hotelsArr, nil
 }
 
-func GetHotelRoomsByName(name string) ([]database.Room, error) {
+func GetHotelRoomsByName(name string) ([]models.Room, error) {
 	return database.GetRoomsByName(name)
 }
 
-func AddHotel(row database.Hotels) error {
+func AddHotel(row models.Hotels) error {
 	return database.AddHotel(row)
 }

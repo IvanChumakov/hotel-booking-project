@@ -3,7 +3,8 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/json"
-	"hotel-booking/internal/app/services"
+	"github.com/IvanChumakov/hotel-booking-project/internal/app/services"
+	"github.com/IvanChumakov/hotel-booking-project/internal/models"
 	"io"
 	"log"
 	"math"
@@ -24,7 +25,7 @@ func MakeOperation(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	var paymentInfo services.PaymentInfo
+	var paymentInfo models.PaymentInfo
 	err = json.Unmarshal(data, &paymentInfo)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -43,7 +44,8 @@ func MakeOperation(w http.ResponseWriter, r *http.Request) {
 	if rnd.Int64()%2 == 0 {
 		statusCode, err = client.SendCallback(paymentInfo)
 	} else {
-		http.Error(w, "Payment failure", http.StatusBadRequest)
+		log.Print("payment failure (преднамеренный)")
+		http.Error(w, "Payment failure (преднамеренный)", http.StatusBadRequest)
 		return
 	}
 

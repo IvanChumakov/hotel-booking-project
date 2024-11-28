@@ -74,31 +74,32 @@ services:
     ports:
       - "5432:5432"
 
-  hotel-service:
-    build:
-      context: .
-      dockerfile: ./cmd/HotelService/Dockerfile
-    volumes:
-      - .:/code
-    ports:
-      - "8081:8081"
-      - "50051:50051"
-    networks:
-      - hotel-booking-network
-    depends_on:
-      - postgres
+#  hotel-service:
+#    build:
+#      context: .
+#      dockerfile: ./cmd/HotelService/Dockerfile
+#    volumes:
+#      - .:/code
+#    ports:
+#      - "8082:8081"
+#      - "50051:50051"
+#    networks:
+#      - hotel-booking-network
+#    depends_on:
+#      - postgres
+#
+#  booking-service:
+#    build:
+#      context: .
+#      dockerfile: ./cmd/BookingService/Dockerfile
+#    volumes:
+#      - .:/code
+#    ports:
+#      - "8080:8080"
+#    networks:
+#      - hotel-booking-network
+#    depends_on:
+#      - postgres
+#      - hotel-service
 
-  booking-service:
-    build:
-      context: .
-      dockerfile: ./cmd/BookingService/Dockerfile
-    volumes:
-      - .:/code
-    ports:
-      - "8080:8080"
-    networks:
-      - hotel-booking-network
-    depends_on:
-      - postgres
-      - hotel-service
 

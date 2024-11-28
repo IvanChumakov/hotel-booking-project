@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
-	"hotel-booking/internal/app/services"
-	"hotel-booking/internal/database"
+	"github.com/IvanChumakov/hotel-booking-project/internal/app/services"
+	"github.com/IvanChumakov/hotel-booking-project/internal/models"
 	"io"
 	"log"
 	"net/http"
@@ -47,7 +47,7 @@ func AddHotel(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Print(string(data))
 
-	var row database.Hotels
+	var row models.Hotels
 	err = json.Unmarshal(data, &row)
 	if err != nil {
 		log.Print("error while unmarshalling")

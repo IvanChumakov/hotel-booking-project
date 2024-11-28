@@ -1,13 +1,13 @@
 package main
 
 import (
+	_ "github.com/IvanChumakov/hotel-booking-project/cmd/HotelService/docs"
+	"github.com/IvanChumakov/hotel-booking-project/internal/app/handlers"
+	"github.com/IvanChumakov/hotel-booking-project/internal/app/services"
+	pb "github.com/IvanChumakov/hotel-booking-project/protos"
 	"github.com/joho/godotenv"
 	"github.com/swaggo/http-swagger"
 	"google.golang.org/grpc"
-	_ "hotel-booking/cmd/HotelService/docs"
-	"hotel-booking/internal/app/handlers"
-	"hotel-booking/internal/app/services"
-	pb "hotel-booking/protos"
 	"log"
 	"net"
 	"net/http"
@@ -33,8 +33,8 @@ func init() {
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host petstore.swagger.io
-// @BasePath /v2
+// @host localhost:8081
+// @BasePath /
 func main() {
 	port, _ := os.LookupEnv("HOTEL_PORT")
 
@@ -49,7 +49,7 @@ func main() {
 
 	mux.Handle("/get_hotels", http.HandlerFunc(handlers.GetHotels))
 	mux.Handle("/add_hotel", http.HandlerFunc(handlers.AddHotel))
-	mux.Handle("/swagger/*", httpSwagger.Handler(httpSwagger.URL("/swagger/doc.json")))
+	mux.Handle("/swagger/*", httpSwagger.Handler(httpSwagger.URL("swagger/doc.json")))
 
 	go func() {
 		log.Printf("Starting server at port %s", port)

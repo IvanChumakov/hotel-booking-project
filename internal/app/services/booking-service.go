@@ -5,31 +5,29 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/IvanChumakov/hotel-booking-project/internal/broker"
+	"github.com/IvanChumakov/hotel-booking-project/internal/database"
+	"github.com/IvanChumakov/hotel-booking-project/internal/models"
+	pb "github.com/IvanChumakov/hotel-booking-project/protos"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"hotel-booking/internal/database"
-	pb "hotel-booking/protos"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
 )
 
-type PaymentInfo struct {
-	Price   int              `json:"price"`
-	Booking database.Booking `json:"booking"`
-}
-
-func GetAllBookings() ([]database.Booking, error) {
+func GetAllBookings() ([]models.Booking, error) {
 	return database.GetAllBookings()
 }
 
-func GetaBookingByName(name string) ([]database.Booking, error) {
+func GetaBookingByName(name string) ([]models.Booking, error) {
 	return database.GetBookingsByHotelName(name)
 }
 
-func GetHotelRoomsWithPrice(booking database.Booking) ([]database.Room, error) {
+func GetHotelRoomsWithPrice(booking models.Booking) ([]models.Room, error) {
 	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -46,9 +44,9 @@ func GetHotelRoomsWithPrice(booking database.Booking) ([]database.Room, error) {
 		log.Fatalf("grpc response error: %v", err)
 		return nil, err
 	}
-	rooms := make([]database.Room, 0)
+	rooms := make([]models.Room, 0)
 	for _, room := range response.RoomData {
-		rooms = append(rooms, database.Room{
+		rooms = append(rooms, models.Room{
 			Id:         uuid.Nil,
 			Price:      int(room.Price),
 			RoomNumber: int(room.RoomNumber),
@@ -58,12 +56,12 @@ func GetHotelRoomsWithPrice(booking database.Booking) ([]database.Room, error) {
 	return rooms, nil
 }
 
-func FilterRooms(booking database.Booking, allRooms []database.Room) ([]database.Room, error) {
+func FilterRooms(booking models.Booking, allRooms []models.Room) ([]models.Room, error) {
 	booked, err := GetaBookingByName(booking.HotelName)
 	if err != nil {
 		return allRooms, err
 	}
-	freeRooms := make([]database.Room, 0)
+	freeRooms := make([]models.Room, 0)
 	for _, room := range allRooms {
 		flag := true
 		for _, piece := range booked {
@@ -82,11 +80,11 @@ func FilterRooms(booking database.Booking, allRooms []database.Room) ([]database
 	return freeRooms, nil
 }
 
-func AddBooking(booking database.Booking) error {
+func AddBooking(booking models.Booking) error {
 	return database.AddBooking(booking)
 }
 
-func MakePaymentOperation(booking database.Booking) error {
+func MakePaymentOperation(booking models.Booking) error {
 	rooms, err := GetHotelRoomsWithPrice(booking)
 	if err != nil {
 		return err
@@ -98,7 +96,7 @@ func MakePaymentOperation(booking database.Booking) error {
 			break
 		}
 	}
-	paymentInfo := PaymentInfo{
+	paymentInfo := models.PaymentInfo{
 		Price:   finalPrice,
 		Booking: booking,
 	}
@@ -123,7 +121,20 @@ func MakePaymentOperation(booking database.Booking) error {
 		return err
 	}
 	if httpData.StatusCode != http.StatusOK {
-		return fmt.Errorf("payment operation failed with status code %d", httpData.StatusCode)
+		body, err := io.ReadAll(httpData.Body)
+		if err != nil {
+			return fmt.Errorf("payment operation failed (неожиданно)")
+		}
+		return fmt.Errorf("payment operation failed with error: %s", body)
 	}
+	return nil
+}
+
+func SendNotification(booking models.Booking) error {
+	producer, err := broker.NewProducer("localhost:19092", "booking-notifications")
+	if err != nil {
+		return err
+	}
+	producer.SendMessage(booking)
 	return nil
 }

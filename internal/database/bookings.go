@@ -1,39 +1,13 @@
 package database
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/IvanChumakov/hotel-booking-project/internal/models"
 	"github.com/google/uuid"
 	"log"
-	"time"
 )
 
-type Booking struct {
-	Id         uuid.UUID  `json:"id"`
-	HotelName  string     `json:"hotel_name"`
-	RoomNumber int        `json:"room_number"`
-	From       CustomDate `json:"from"`
-	To         CustomDate `json:"to"`
-}
-
-type CustomDate struct {
-	time.Time
-}
-
-func (c *CustomDate) UnmarshalJSON(b []byte) (err error) {
-	c.Time, err = time.Parse(`"2006-01-02"`, string(b))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *CustomDate) MarshalJSON() ([]byte, error) {
-	formattedDate := c.Time.Format(`"2006-01-02"`)
-	return json.Marshal(formattedDate)
-}
-
-func GetAllBookings() ([]Booking, error) {
+func GetAllBookings() ([]models.Booking, error) {
 	query := NewSqlBuilder()
 	query = query.Select(make([]string, 0)).From("bookings")
 
@@ -50,9 +24,9 @@ func GetAllBookings() ([]Booking, error) {
 		return nil, err
 	}
 
-	bookings := make([]Booking, 0)
+	bookings := make([]models.Booking, 0)
 	for rows.Next() {
-		var booking Booking
+		var booking models.Booking
 		err = rows.Scan(&booking.Id, &booking.HotelName, &booking.RoomNumber, &booking.From.Time, &booking.To.Time)
 
 		bookings = append(bookings, booking)
@@ -60,7 +34,7 @@ func GetAllBookings() ([]Booking, error) {
 	return bookings, nil
 }
 
-func GetBookingsByHotelName(hotelName string) ([]Booking, error) {
+func GetBookingsByHotelName(hotelName string) ([]models.Booking, error) {
 	query := NewSqlBuilder()
 	query = query.Select(make([]string, 0)).From("bookings").Where(fmt.Sprintf("hotel_name = '%s'", hotelName))
 
@@ -77,21 +51,21 @@ func GetBookingsByHotelName(hotelName string) ([]Booking, error) {
 		return nil, err
 	}
 
-	bookings := make([]Booking, 0)
+	bookings := make([]models.Booking, 0)
 	for rows.Next() {
-		var booking Booking
+		var booking models.Booking
 		err = rows.Scan(&booking.Id, &booking.HotelName, &booking.RoomNumber, &booking.From.Time, &booking.To.Time)
 		bookings = append(bookings, booking)
 	}
 	return bookings, nil
 }
 
-func AddBooking(booking Booking) error {
+func AddBooking(booking models.Booking) error {
 	query := NewSqlBuilder()
 	fromParsed := booking.From.Time.Format("2006-01-02")
 	toParsed := booking.To.Time.Format("2006-01-02")
 
-	query = query.CustomQuery(fmt.Sprintf("insert into bookings (id, hotel_name, room_number, \"from\", \"to\") "+
+	query = query.CustomQuery(fmt.Sprintf("insert into bookings (id, hotel_name, room_number, from_date, to_date) "+
 		"values ('%s', '%s', %d, '%s', '%s')",
 		uuid.NewString(), booking.HotelName, booking.RoomNumber, fromParsed, toParsed)).
 		Returning("id")

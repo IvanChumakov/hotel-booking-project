@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/IvanChumakov/hotel-booking-project/internal/models"
 	"log"
 	"net/http"
 	"os"
@@ -17,7 +18,7 @@ func NewCallBack(client http.Client) *CallBack {
 	return &CallBack{client: client}
 }
 
-func (c *CallBack) SendCallback(paymentInfo PaymentInfo) (int, error) {
+func (c *CallBack) SendCallback(paymentInfo models.PaymentInfo) (int, error) {
 	port, _ := os.LookupEnv("BOOKING_PORT")
 	jsonData, err := json.Marshal(paymentInfo)
 	if err != nil {

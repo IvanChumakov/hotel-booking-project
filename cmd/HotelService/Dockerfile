@@ -3,4 +3,5 @@ FROM golang:alpine
 WORKDIR /hotelservice
 COPY . .
 RUN go mod download
-CMD ["go", "run", "cmd/HotelService/main.go"]
+RUN go build -o hotelservice cmd/HotelService/main.go
+CMD ["./hotelservice"]
