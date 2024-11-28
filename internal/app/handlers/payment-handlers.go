@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"hotel-booking/internal/app/services"
 	"io"
+	"log"
 	"math"
 	"math/big"
 	"net/http"
+	"time"
 )
 
 func MakeOperation(w http.ResponseWriter, r *http.Request) {
+	log.Print("/payment_operation")
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -32,9 +35,24 @@ func MakeOperation(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	client := services.NewCallBack(http.Client{
+		Timeout: time.Second * 5,
+	})
+
+	var statusCode int
 	if rnd.Int64()%2 == 0 {
-		w.WriteHeader(http.StatusOK)
+		statusCode, err = client.SendCallback(paymentInfo)
 	} else {
-		w.WriteHeader(http.StatusForbidden)
+		http.Error(w, "Payment failure", http.StatusBadRequest)
+		return
 	}
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else if statusCode != http.StatusOK {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(statusCode)
 }

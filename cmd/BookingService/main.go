@@ -31,6 +31,7 @@ func main() {
 	mux.Handle("/get_bookings_by_name", http.HandlerFunc(handlers.GetBookingsByName))
 	mux.Handle("/get_free_rooms", http.HandlerFunc(handlers.GetFreeRoomsByDate))
 	mux.Handle("/add_booking", http.HandlerFunc(handlers.AddBooking))
+	mux.Handle("/payment_callback", http.HandlerFunc(handlers.PaymentCallBack))
 
 	err := s.ListenAndServe()
 	if err != nil {

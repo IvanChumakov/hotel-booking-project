@@ -17,7 +17,8 @@ import (
 )
 
 type PaymentInfo struct {
-	Price int `json:"price"`
+	Price   int              `json:"price"`
+	Booking database.Booking `json:"booking"`
 }
 
 func GetAllBookings() ([]database.Booking, error) {
@@ -29,7 +30,7 @@ func GetaBookingByName(name string) ([]database.Booking, error) {
 }
 
 func GetHotelRoomsWithPrice(booking database.Booking) ([]database.Room, error) {
-	conn, err := grpc.NewClient("hotel-service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 		return nil, err
@@ -98,7 +99,8 @@ func MakePaymentOperation(booking database.Booking) error {
 		}
 	}
 	paymentInfo := PaymentInfo{
-		Price: finalPrice,
+		Price:   finalPrice,
+		Booking: booking,
 	}
 	jsonData, err := json.Marshal(paymentInfo)
 	if err != nil {

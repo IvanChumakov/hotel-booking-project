@@ -108,11 +108,33 @@ func AddBooking(w http.ResponseWriter, r *http.Request) {
 	}
 	err = services.MakePaymentOperation(booking)
 	if err != nil {
-		http.Error(w, "Failed to make payment operation", http.StatusInternalServerError)
+		http.Error(w, "Failed to make payment operation: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = services.AddBooking(booking)
+	w.WriteHeader(http.StatusOK)
+}
+
+func PaymentCallBack(w http.ResponseWriter, r *http.Request) {
+	log.Print("/payment_callback")
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var paymentInfo services.PaymentInfo
+	err = json.Unmarshal(body, &paymentInfo)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = services.AddBooking(paymentInfo.Booking)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+	w.WriteHeader(http.StatusOK)
 }
