@@ -33,7 +33,7 @@ func init() {
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host localhost:8081
+// @host hotel-service:8081
 // @BasePath /
 func main() {
 	port, _ := os.LookupEnv("HOTEL_PORT")
@@ -59,8 +59,7 @@ func main() {
 		}
 	}()
 
-	//grpcPort, _ := os.LookupEnv("PORT")
-	lis, err := net.Listen("tcp", "localhost:50051")
+	lis, err := net.Listen("tcp", "hotel-service:50051")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

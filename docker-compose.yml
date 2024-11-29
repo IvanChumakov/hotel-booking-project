@@ -30,10 +30,10 @@ services:
     networks:
       - hotel-booking-network
     ports:
-      - 18081:18081
-      - 18082:18082
-      - 19092:19092
-      - 19644:9644
+      - "18081:18081"
+      - "18082:18082"
+      - "19092:19092"
+      - "19644:9644"
 
   redpanda-console:
     container_name: redpanda-console
@@ -74,20 +74,20 @@ services:
     ports:
       - "5432:5432"
 
-#  hotel-service:
-#    build:
-#      context: .
-#      dockerfile: ./cmd/HotelService/Dockerfile
-#    volumes:
-#      - .:/code
-#    ports:
-#      - "8082:8081"
-#      - "50051:50051"
-#    networks:
-#      - hotel-booking-network
-#    depends_on:
-#      - postgres
-#
+  hotel-service:
+    build:
+      context: .
+      dockerfile: ./hotelservice/Dockerfile
+    volumes:
+      - .:/code
+    ports:
+      - "8081:8081"
+      - "50051:50051"
+    networks:
+      - hotel-booking-network
+    depends_on:
+      - postgres
+
   booking-service:
     build:
       context: .
@@ -100,5 +100,35 @@ services:
       - hotel-booking-network
     depends_on:
       - postgres
+      - hotel-service
+      - redpanda-0
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: ./paymentservice/Dockerfile
+    volumes:
+      - .:/code
+    ports:
+      - "8082:8082"
+    networks:
+      - hotel-booking-network
+    depends_on:
+      - postgres
+      - hotel-service
+      - booking-service
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./notificationservice/Dockerfile
+    volumes:
+      - .:/code
+    networks:
+      - hotel-booking-network
+    ports:
+      - "8083:8083"
+    depends_on:
+      - redpanda-0
 
 

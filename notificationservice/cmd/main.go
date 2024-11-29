@@ -2,17 +2,18 @@ package main
 
 import (
 	"context"
-	broker2 "github.com/IvanChumakov/hotel-booking-project/notificationservice/internal/broker"
+	"github.com/IvanChumakov/hotel-booking-project/notificationservice/internal/broker"
 	"log"
 )
 
 func main() {
 	topic := "booking-notifications"
-	admin, err := broker2.New("localhost:19092")
+	admin, err := broker.New("redpanda-0:9092")
 	if err != nil {
 		log.Print("initializing redpanda client err:", err)
 		return
 	}
+	log.Print("connection initialized")
 	defer admin.Close()
 
 	ok, err := admin.TopicExists(context.Background(), topic)
@@ -24,7 +25,7 @@ func main() {
 		err = admin.CreateTopic(context.Background(), topic)
 	}
 
-	consumer, err := broker2.NewConsumer("localhost:19092", topic)
+	consumer, err := broker.NewConsumer("redpanda-0:9092", topic)
 	if err != nil {
 		log.Print("initializing redpanda client err:", err)
 		return

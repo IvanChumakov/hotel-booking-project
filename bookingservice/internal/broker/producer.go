@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/models"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"log"
 )
 
 type Producer struct {
@@ -25,6 +26,7 @@ func NewProducer(brokers string, topic string) (*Producer, error) {
 func (p *Producer) SendMessage(notification models.Booking) {
 	ctx := context.Background()
 	b, _ := json.Marshal(notification)
+	log.Print("marshalling before sending: ", string(b))
 	p.client.Produce(ctx, &kgo.Record{Topic: p.topic, Value: b}, nil)
 }
 

@@ -28,7 +28,7 @@ func GetaBookingByName(name string) ([]models.Booking, error) {
 }
 
 func GetHotelRoomsWithPrice(booking models.Booking) ([]models.Room, error) {
-	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("hotel-service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 		return nil, err
@@ -110,7 +110,7 @@ func MakePaymentOperation(booking models.Booking) error {
 		Timeout: 100 * time.Second,
 	}
 	request, err := http.NewRequest(http.MethodPost,
-		fmt.Sprintf("http://localhost%s/payment", port),
+		fmt.Sprintf("http://payment-service%s/payment", port),
 		bytes.NewBuffer(jsonData))
 
 	if err != nil {
@@ -131,10 +131,12 @@ func MakePaymentOperation(booking models.Booking) error {
 }
 
 func SendNotification(booking models.Booking) error {
-	producer, err := broker.NewProducer("localhost:19092", "booking-notifications")
+	producer, err := broker.NewProducer("redpanda-0:9092", "booking-notifications")
 	if err != nil {
+		log.Print("sending message error: ", err.Error())
 		return err
 	}
+	log.Print("connection initialized")
 	producer.SendMessage(booking)
 	return nil
 }

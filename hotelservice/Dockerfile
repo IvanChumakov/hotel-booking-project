@@ -1,7 +1,12 @@
-FROM golang:alpine
+FROM golang:alpine AS builder
 
 WORKDIR /hotelservice
-COPY ../../cmd/HotelService .
+COPY ./go.mod ./go.sum ./
 RUN go mod download
-RUN go build -o hotelservice cmd/HotelService/main.go
-CMD ["./hotelservice"]
+
+COPY hotelservice/ ./hotelservice/
+COPY hotel-lib/ ./hotel-lib/
+COPY protos/ ./protos/
+COPY .env ./
+RUN go build -o hotel-service ./hotelservice/cmd/main.go
+CMD ["./hotel-service"]

@@ -26,7 +26,7 @@ func (c *CallBack) SendCallback(paymentInfo models.PaymentInfo) (int, error) {
 	}
 
 	request, err := http.NewRequest(http.MethodPost,
-		fmt.Sprintf("http://localhost%s/payment_callback", port), bytes.NewBuffer(jsonData))
+		fmt.Sprintf("http://booking-service%s/payment_callback", port), bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Println("sending callback: ", err)
 		return 0, err

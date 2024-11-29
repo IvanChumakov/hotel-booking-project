@@ -25,6 +25,7 @@ func New(broker string) (*Admin, error) {
 func (a *Admin) TopicExists(ctx context.Context, topic string) (bool, error) {
 	topics, err := a.client.ListTopics(ctx)
 	if err != nil {
+		log.Printf("failed to list topics: %v", err)
 		return false, err
 	}
 	for _, topicData := range topics {
