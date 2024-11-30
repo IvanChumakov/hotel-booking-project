@@ -3,11 +3,12 @@ package broker
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"log"
+
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/models"
+	"github.com/IvanChumakov/hotel-booking-project/notificationservice/internal/app"
 	"github.com/google/uuid"
 	"github.com/twmb/franz-go/pkg/kgo"
-	"log"
 )
 
 type Consumer struct {
@@ -38,11 +39,14 @@ func (c *Consumer) ReadNotifications() {
 		for !iter.Done() {
 			record := iter.Next()
 			log.Print(string(record.Value))
+
 			var notification models.Booking
 			if err := json.Unmarshal(record.Value, &notification); err != nil {
-				fmt.Printf("Error decoding notification: %v\n", err)
+				log.Print("Error unmarshaling booking")
 				continue
 			}
+
+			app.SendNotification(notification)
 			c.client.MarkCommitRecords(record)
 		}
 	}

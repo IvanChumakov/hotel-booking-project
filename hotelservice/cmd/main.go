@@ -1,18 +1,19 @@
 package main
 
 import (
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/middleware"
 	_ "github.com/IvanChumakov/hotel-booking-project/hotelservice/cmd/docs"
 	"github.com/IvanChumakov/hotel-booking-project/hotelservice/internal/api"
 	"github.com/IvanChumakov/hotel-booking-project/hotelservice/internal/app"
 	pb "github.com/IvanChumakov/hotel-booking-project/protos"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/swaggo/http-swagger"
 	"google.golang.org/grpc"
 	"log"
 	"net"
 	"net/http"
 	"os"
-	"time"
 )
 
 func init() {
@@ -37,23 +38,28 @@ func init() {
 // @BasePath /
 func main() {
 	port, _ := os.LookupEnv("HOTEL_PORT")
+	prometheusHost, _ := os.LookupEnv("PROMETHEUS_HOST")
+	prometheusPort, _ := os.LookupEnv("PROMETHEUS_PORT")
 
 	mux := http.NewServeMux()
-	s := &http.Server{
-		Addr:         port,
-		Handler:      mux,
-		IdleTimeout:  10 * time.Second,
-		ReadTimeout:  time.Second,
-		WriteTimeout: time.Second,
-	}
 
 	mux.Handle("/get_hotels", http.HandlerFunc(api.GetHotels))
 	mux.Handle("/add_hotel", http.HandlerFunc(api.AddHotel))
 	mux.Handle("/swagger/*", httpSwagger.Handler(httpSwagger.URL("swagger/doc.json")))
+	http.Handle("/metrics", promhttp.Handler())
 
+	wrappedMux := middleware.NewMiddleware(mux)
 	go func() {
 		log.Printf("Starting server at port %s", port)
-		err := s.ListenAndServe()
+		err := http.ListenAndServe(port, wrappedMux)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	go func() {
+		log.Printf("Starting prometheus server at port %s", prometheusPort)
+		err := http.ListenAndServe(prometheusHost+":"+prometheusPort, nil)
 		if err != nil {
 			log.Fatal(err)
 		}

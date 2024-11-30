@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -114,6 +115,108 @@ var Booking_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetHotelData",
 			Handler:    _Booking_GetHotelData_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "booking.proto",
+}
+
+const (
+	NotificationDelivery_SendNotification_FullMethodName = "/NotificationDelivery/SendNotification"
+)
+
+// NotificationDeliveryClient is the client API for NotificationDelivery service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type NotificationDeliveryClient interface {
+	SendNotification(ctx context.Context, in *Notification, opts ...grpc.CallOption) (*emptypb.Empty, error)
+}
+
+type notificationDeliveryClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewNotificationDeliveryClient(cc grpc.ClientConnInterface) NotificationDeliveryClient {
+	return &notificationDeliveryClient{cc}
+}
+
+func (c *notificationDeliveryClient) SendNotification(ctx context.Context, in *Notification, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, NotificationDelivery_SendNotification_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// NotificationDeliveryServer is the server API for NotificationDelivery service.
+// All implementations must embed UnimplementedNotificationDeliveryServer
+// for forward compatibility.
+type NotificationDeliveryServer interface {
+	SendNotification(context.Context, *Notification) (*emptypb.Empty, error)
+	mustEmbedUnimplementedNotificationDeliveryServer()
+}
+
+// UnimplementedNotificationDeliveryServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedNotificationDeliveryServer struct{}
+
+func (UnimplementedNotificationDeliveryServer) SendNotification(context.Context, *Notification) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendNotification not implemented")
+}
+func (UnimplementedNotificationDeliveryServer) mustEmbedUnimplementedNotificationDeliveryServer() {}
+func (UnimplementedNotificationDeliveryServer) testEmbeddedByValue()                              {}
+
+// UnsafeNotificationDeliveryServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to NotificationDeliveryServer will
+// result in compilation errors.
+type UnsafeNotificationDeliveryServer interface {
+	mustEmbedUnimplementedNotificationDeliveryServer()
+}
+
+func RegisterNotificationDeliveryServer(s grpc.ServiceRegistrar, srv NotificationDeliveryServer) {
+	// If the following call pancis, it indicates UnimplementedNotificationDeliveryServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&NotificationDelivery_ServiceDesc, srv)
+}
+
+func _NotificationDelivery_SendNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Notification)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationDeliveryServer).SendNotification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NotificationDelivery_SendNotification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationDeliveryServer).SendNotification(ctx, req.(*Notification))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// NotificationDelivery_ServiceDesc is the grpc.ServiceDesc for NotificationDelivery service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var NotificationDelivery_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "NotificationDelivery",
+	HandlerType: (*NotificationDeliveryServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SendNotification",
+			Handler:    _NotificationDelivery_SendNotification_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -7,6 +7,7 @@ networks:
 volumes:
   redpanda-0: null
   postgres_data:
+  prometheus:
 
 services:
   redpanda-0:
@@ -75,60 +76,85 @@ services:
       - "5432:5432"
 
   hotel-service:
-    build:
-      context: .
-      dockerfile: ./hotelservice/Dockerfile
-    volumes:
-      - .:/code
-    ports:
-      - "8081:8081"
-      - "50051:50051"
-    networks:
-      - hotel-booking-network
-    depends_on:
-      - postgres
+   build:
+     context: .
+     dockerfile: ./hotelservice/Dockerfile
+   volumes:
+     - .:/code
+   ports:
+     - "8081:8081"
+     - "50051:50051"
+     - "5745:5745"
+   networks:
+     - hotel-booking-network
+   depends_on:
+     - postgres
 
   booking-service:
-    build:
-      context: .
-      dockerfile: ./bookingservice/Dockerfile
-    volumes:
-      - .:/code
-    ports:
-      - "8080:8080"
-    networks:
-      - hotel-booking-network
-    depends_on:
-      - postgres
-      - hotel-service
-      - redpanda-0
+   build:
+     context: .
+     dockerfile: ./bookingservice/Dockerfile
+   volumes:
+     - .:/code
+   ports:
+     - "8080:8080"
+     - "5746:5746"
+   networks:
+     - hotel-booking-network
+   depends_on:
+     - postgres
+     - hotel-service
+     - redpanda-0
 
   payment-service:
-    build:
-      context: .
-      dockerfile: ./paymentservice/Dockerfile
-    volumes:
-      - .:/code
-    ports:
-      - "8082:8082"
-    networks:
-      - hotel-booking-network
-    depends_on:
-      - postgres
-      - hotel-service
-      - booking-service
+   build:
+     context: .
+     dockerfile: ./paymentservice/Dockerfile
+   volumes:
+     - .:/code
+   ports:
+     - "8082:8082"
+   networks:
+     - hotel-booking-network
+   depends_on:
+     - postgres
+     - hotel-service
+     - booking-service
 
   notification-service:
+   build:
+     context: .
+     dockerfile: ./notificationservice/Dockerfile
+   volumes:
+     - .:/code
+   networks:
+     - hotel-booking-network
+   ports:
+     - "8083:8083"
+   depends_on:
+     - delivery-service
+     - redpanda-0
+  
+  delivery-service:
     build:
-      context: .
-      dockerfile: ./notificationservice/Dockerfile
+     context: .
+     dockerfile: ./deliveryservice/Dockerfile
     volumes:
-      - .:/code
+     - .:/code
+    networks:
+     - hotel-booking-network
+    ports:
+     - "50052:50052"
+
+  prometheus:
+    image: prom/prometheus:v2.42.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/config.yml:/etc/prometheus/config.yml
+      - ./prometheus/config.yml:/etc/prometheus/prometheus.yml
     networks:
       - hotel-booking-network
-    ports:
-      - "8083:8083"
-    depends_on:
-      - redpanda-0
 
 

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/metrics"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/models"
 	"github.com/IvanChumakov/hotel-booking-project/hotelservice/internal/app"
 	"io"
@@ -9,8 +10,11 @@ import (
 	"net/http"
 )
 
+var metric = metrics.NewMetrics()
+
 func GetHotels(w http.ResponseWriter, r *http.Request) {
 	log.Print("/get_hotels")
+	metric.IncRequestAllHotels()
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -60,5 +64,6 @@ func AddHotel(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	metric.IncRequestAddHotels()
 	w.WriteHeader(http.StatusOK)
 }

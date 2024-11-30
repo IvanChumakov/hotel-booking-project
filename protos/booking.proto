@@ -1,6 +1,9 @@
 syntax = "proto3";
 option go_package = "./;hotelbooking";
 
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
 message RoomData {
   int32 room_number = 1;
   int32 price = 2;
@@ -16,4 +19,15 @@ message HotelData {
 
 service Booking {
   rpc GetHotelData(HotelData) returns (RoomsDataArray);
+}
+
+message Notification {
+  int32 room_number = 1;
+  string hotel_name = 2;
+  google.protobuf.Timestamp from = 3;
+  google.protobuf.Timestamp to = 4;
+}
+
+service NotificationDelivery {
+  rpc SendNotification(Notification) returns (google.protobuf.Empty);
 }

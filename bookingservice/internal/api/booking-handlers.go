@@ -2,15 +2,18 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/IvanChumakov/hotel-booking-project/bookingservice/internal/app"
-	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/models"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/IvanChumakov/hotel-booking-project/bookingservice/internal/app"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/metrics"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/models"
 )
 
+var metric = metrics.NewMetrics()
+
 func GetBookings(w http.ResponseWriter, r *http.Request) {
-	log.Print("/get_bookings")
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -74,7 +77,7 @@ func GetFreeRoomsByDate(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	rooms, err := app.GetHotelRoomsWithPrice(booking)
+	rooms, _ := app.GetHotelRoomsWithPrice(booking)
 	freeRooms, err := app.FilterRooms(booking, rooms)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -91,6 +94,7 @@ func GetFreeRoomsByDate(w http.ResponseWriter, r *http.Request) {
 
 func AddBooking(w http.ResponseWriter, r *http.Request) {
 	log.Print("/add_booking")
+	metric.IncRequestAddBooking()
 	if http.MethodPost != r.Method {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -111,7 +115,7 @@ func AddBooking(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to make payment operation: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = app.SendNotification(booking)
+	_ = app.SendNotification(booking)
 	w.WriteHeader(http.StatusOK)
 }
 
