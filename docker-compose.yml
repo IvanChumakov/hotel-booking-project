@@ -1,3 +1,4 @@
+version: '3'
 name: hotel-booking-system
 
 networks:
@@ -5,29 +6,29 @@ networks:
     driver: bridge
 
 volumes:
-  redpanda-0: null
+  redpanda: null
   postgres_data:
   prometheus:
 
 services:
-  redpanda-0:
+  redpanda:
     command:
       - redpanda
       - start
       - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
-      - --advertise-kafka-addr internal://redpanda-0:9092,external://localhost:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
       - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
-      - --advertise-pandaproxy-addr internal://redpanda-0:8082,external://localhost:18082
+      - --advertise-pandaproxy-addr internal://redpanda:8082,external://localhost:18082
       - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
-      - --rpc-addr redpanda-0:33145
-      - --advertise-rpc-addr redpanda-0:33145
+      - --rpc-addr redpanda:33145
+      - --advertise-rpc-addr redpanda:33145
       - --mode dev-container
       - --smp 1
       - --default-log-level=info
     image: docker.redpanda.com/redpandadata/redpanda:v24.2.8
-    container_name: redpanda-0
+    container_name: redpanda
     volumes:
-      - redpanda-0:/var/lib/redpanda/data
+      - redpanda:/var/lib/redpanda/data
     networks:
       - hotel-booking-network
     ports:
@@ -35,6 +36,7 @@ services:
       - "18082:18082"
       - "19092:19092"
       - "19644:9644"
+      - "9092:9092"
 
   redpanda-console:
     container_name: redpanda-console
@@ -47,18 +49,18 @@ services:
       CONFIG_FILEPATH: /tmp/config.yml
       CONSOLE_CONFIG_FILE: |
         kafka:
-          brokers: ["redpanda-0:9092"]
+          brokers: ["redpanda:9092"]
           schemaRegistry:
             enabled: true
-            urls: ["http://redpanda-0:8081"]
+            urls: ["http://redpanda:8081"]
         redpanda:
           adminApi:
             enabled: true
-            urls: ["http://redpanda-0:9644"]
+            urls: ["http://redpanda:9644"]
     ports:
       - "8000:8080"
     depends_on:
-      - redpanda-0
+      - redpanda
 
   postgres:
     image: postgres:14.8-alpine3.18
@@ -104,7 +106,7 @@ services:
    depends_on:
      - postgres
      - hotel-service
-     - redpanda-0
+     - redpanda
 
   payment-service:
    build:
@@ -133,7 +135,7 @@ services:
      - "8083:8083"
    depends_on:
      - delivery-service
-     - redpanda-0
+     - redpanda
   
   delivery-service:
     build:

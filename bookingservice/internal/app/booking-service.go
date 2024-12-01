@@ -5,6 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/IvanChumakov/hotel-booking-project/bookingservice/internal/broker"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/database"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/models"
@@ -12,11 +18,6 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"time"
 )
 
 func GetAllBookings() ([]models.Booking, error) {
@@ -131,7 +132,7 @@ func MakePaymentOperation(booking models.Booking) error {
 }
 
 func SendNotification(booking models.Booking) error {
-	producer, err := broker.NewProducer("redpanda-0:9092", "booking-notifications")
+	producer, err := broker.NewProducer("redpanda:9092", "booking-notifications")
 	if err != nil {
 		log.Print("sending message error: ", err.Error())
 		return err

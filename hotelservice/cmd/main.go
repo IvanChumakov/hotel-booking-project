@@ -1,6 +1,11 @@
 package main
 
 import (
+	"log"
+	"net"
+	"net/http"
+	"os"
+
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/middleware"
 	_ "github.com/IvanChumakov/hotel-booking-project/hotelservice/cmd/docs"
 	"github.com/IvanChumakov/hotel-booking-project/hotelservice/internal/api"
@@ -10,10 +15,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/swaggo/http-swagger"
 	"google.golang.org/grpc"
-	"log"
-	"net"
-	"net/http"
-	"os"
 )
 
 func init() {
