@@ -12,6 +12,15 @@ import (
 
 var metric = metrics.NewMetrics()
 
+
+// GetHotels godoc
+// @Summary      Получить все отели
+// @Description  Получить список всех отелей с номерами
+// @Tags         Hotels
+// @Accept		 application/x-www-form-urlencoded
+// @Produce      json
+// @Success      200  {array}  models.Hotels
+// @Router       /get_hotels [get]
 func GetHotels(w http.ResponseWriter, r *http.Request) {
 	log.Print("/get_hotels")
 	metric.IncRequestAllHotels()

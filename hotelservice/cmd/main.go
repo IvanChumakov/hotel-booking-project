@@ -7,13 +7,13 @@ import (
 	"os"
 
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/middleware"
-	_ "github.com/IvanChumakov/hotel-booking-project/hotelservice/cmd/docs"
 	"github.com/IvanChumakov/hotel-booking-project/hotelservice/internal/api"
 	"github.com/IvanChumakov/hotel-booking-project/hotelservice/internal/app"
 	pb "github.com/IvanChumakov/hotel-booking-project/protos"
 	"github.com/joho/godotenv"
+	_ "github.com/IvanChumakov/hotel-booking-project/hotelservice/docs"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/swaggo/http-swagger"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"google.golang.org/grpc"
 )
 
@@ -23,19 +23,9 @@ func init() {
 	}
 }
 
-// @title Swagger Example API
+// @title Swagger Hotel Service API
 // @version 1.0
-// @description This is a sample server Petstore server.
-// @termsOfService http://swagger.io/terms/
-
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
-
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host hotel-service:8081
+// @host localhost:8081
 // @BasePath /
 func main() {
 	port, _ := os.LookupEnv("HOTEL_PORT")
@@ -46,7 +36,7 @@ func main() {
 
 	mux.Handle("/get_hotels", http.HandlerFunc(api.GetHotels))
 	mux.Handle("/add_hotel", http.HandlerFunc(api.AddHotel))
-	mux.Handle("/swagger/*", httpSwagger.Handler(httpSwagger.URL("swagger/doc.json")))
+	mux.Handle("/swagger/", httpSwagger.Handler(httpSwagger.URL("swagger/swagger/doc.json")))
 	http.Handle("/metrics", promhttp.Handler())
 
 	wrappedMux := middleware.NewMiddleware(mux)
@@ -66,7 +56,7 @@ func main() {
 		}
 	}()
 
-	lis, err := net.Listen("tcp", "hotel-service:50051")
+	lis, err := net.Listen("tcp", "localhost:50051")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

@@ -1,0 +1,48 @@
+basePath: /
+definitions:
+  models.Hotels:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      room:
+        items:
+          $ref: '#/definitions/models.Room'
+        type: array
+    type: object
+  models.Room:
+    properties:
+      hotel_id:
+        type: string
+      id:
+        type: string
+      price:
+        type: integer
+      room_number:
+        type: integer
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  title: Swagger Hotel Service API
+  version: "1.0"
+paths:
+  /get_hotels:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Получить список всех отелей с номерами
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Hotels'
+            type: array
+      summary: Получить все отели
+      tags:
+      - Hotels
+swagger: "2.0"
