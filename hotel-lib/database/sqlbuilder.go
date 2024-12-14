@@ -14,7 +14,7 @@ type Database struct {
 }
 
 func InitConnection(database string) (*Database, error) {
-	conn := fmt.Sprintf("host=postgres port=5432 user=username password=1234 dbname=%s sslmode=disable", database)
+	conn := fmt.Sprintf("host=localhost port=5432 user=username password=1234 dbname=%s sslmode=disable", database)
 	db, err := sql.Open("postgres", conn)
 	if err != nil {
 		return nil, err
@@ -41,6 +41,16 @@ func (d *Database) Insert(sqlBuilder *SqlBuilder) (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 	return id, nil
+}
+
+func (d *Database) Exists(sqlBuilder *SqlBuilder) (bool, error) {
+	var result int
+	err := d.db.QueryRow(sqlBuilder.query).Scan(&result)
+	if err != nil {
+		log.Print(err.Error())
+		return false, err
+	}
+	return result > 0, nil
 }
 
 func (d *Database) Close() {

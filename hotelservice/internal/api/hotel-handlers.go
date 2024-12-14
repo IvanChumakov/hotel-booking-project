@@ -2,27 +2,32 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/auth"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/logger"
+	"io"
+	"net/http"
+
+	customErros "github.com/IvanChumakov/hotel-booking-project/hotel-lib/errors"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/metrics"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/models"
 	"github.com/IvanChumakov/hotel-booking-project/hotelservice/internal/app"
-	"io"
-	"log"
-	"net/http"
 )
 
 var metric = metrics.NewMetrics()
-
+var log = logger.New()
 
 // GetHotels godoc
 // @Summary      Получить все отели
 // @Description  Получить список всех отелей с номерами
 // @Tags         Hotels
 // @Accept		 application/x-www-form-urlencoded
+// @Security BearerAuth
 // @Produce      json
 // @Success      200  {array}  models.Hotels
 // @Router       /get_hotels [get]
 func GetHotels(w http.ResponseWriter, r *http.Request) {
-	log.Print("/get_hotels")
 	metric.IncRequestAllHotels()
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -44,26 +49,33 @@ func GetHotels(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// AddHotel godoc
+// @Summary      Добавить отель
+// @Description  Добавить информацию об отеле в базу
+// @Tags         Hotels
+// @Accept		 json
+// @Param 		 hotel body models.Hotels true "Добавить отель"
+// @Security BearerAuth
+// @Produce      json
+// @Success      200
+// @Router       /add_hotel [post]
 func AddHotel(w http.ResponseWriter, r *http.Request) {
-	log.Print("/add_hotel")
+	metric.IncRequestAddHotels()
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	log.Print("method checked")
 
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Print("error while reading")
+		log.Logger.Error("error while reading")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	log.Print(string(data))
-
 	var row models.Hotels
 	err = json.Unmarshal(data, &row)
 	if err != nil {
-		log.Print("error while unmarshalling")
+		log.Logger.Error("error while unmarshalling")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -73,6 +85,93 @@ func AddHotel(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	metric.IncRequestAddHotels()
+	w.WriteHeader(http.StatusOK)
+}
+
+// Register godoc
+// @Summary      Регистрация
+// @Description  Зарегистрироваться в сервисе
+// @Tags         Auth
+// @Accept		 json
+// @Produce      json
+// @Param 		 user body models.User true "Создать пользователя"
+// @Success      200  {string} string
+// @Router       /register [post]
+func Register(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Logger.Error("error while reading")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var user models.User
+	err = json.Unmarshal(data, &user)
+	if err != nil {
+		log.Logger.Error("error while unmarshalling")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	token, err := auth.Register(user)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		var loginErr *customErros.LoginExistsError
+
+		if errors.As(err, &loginErr) {
+			_, _ = fmt.Fprintf(w, err.Error())
+		}
+		log.Logger.Error("error while registering: ", err.Error())
+		return
+	}
+	_ = json.NewEncoder(w).Encode(token)
+	w.WriteHeader(http.StatusOK)
+}
+
+// Login godoc
+// @Summary      Вход
+// @Description  Войти в аккаунт
+// @Tags         Auth
+// @Accept		 json
+// @Produce      json
+// @Param 		 user body models.UserLogin true "Данные пользователя"
+// @Success      200  {string} string
+// @Router       /login [post]
+func Login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Logger.Error("error while reading")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var userLogin models.UserLogin
+	err = json.Unmarshal(data, &userLogin)
+	if err != nil {
+		log.Logger.Error("error while unmarshalling")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	user := models.User{
+		Login:    userLogin.Login,
+		Password: userLogin.Password,
+	}
+	token, err := auth.Login(user)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		var loginErr *customErros.AuthError
+
+		if errors.As(err, &loginErr) {
+			_, _ = fmt.Fprintf(w, err.Error())
+		}
+		log.Logger.Error("error while login: ", err.Error())
+		return
+	}
+	_ = json.NewEncoder(w).Encode(token)
 	w.WriteHeader(http.StatusOK)
 }

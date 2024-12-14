@@ -1,4 +1,3 @@
-basePath: /
 definitions:
   models.Hotels:
     properties:
@@ -22,12 +21,52 @@ definitions:
       room_number:
         type: integer
     type: object
+  models.User:
+    properties:
+      id:
+        type: string
+      login:
+        type: string
+      password:
+        type: string
+      role:
+        type: string
+    type: object
+  models.UserLogin:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
 host: localhost:8081
 info:
   contact: {}
   title: Swagger Hotel Service API
   version: "1.0"
 paths:
+  /add_hotel:
+    post:
+      consumes:
+      - application/json
+      description: Добавить информацию об отеле в базу
+      parameters:
+      - description: Добавить отель
+        in: body
+        name: hotel
+        required: true
+        schema:
+          $ref: '#/definitions/models.Hotels'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Добавить отель
+      tags:
+      - Hotels
   /get_hotels:
     get:
       consumes:
@@ -42,7 +81,58 @@ paths:
             items:
               $ref: '#/definitions/models.Hotels'
             type: array
+      security:
+      - BearerAuth: []
       summary: Получить все отели
       tags:
       - Hotels
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Войти в аккаунт
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Вход
+      tags:
+      - Auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Зарегистрироваться в сервисе
+      parameters:
+      - description: Создать пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Регистрация
+      tags:
+      - Auth
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

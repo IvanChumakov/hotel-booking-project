@@ -36,6 +36,18 @@ type Room struct {
 	RoomNumber int       `json:"room_number"`
 }
 
+type User struct {
+	Id       uuid.UUID `json:"id,omitempty"`
+	Role     string    `json:"role,omitempty"`
+	Login    string    `json:"login"`
+	Password string    `json:"password"`
+}
+
+type UserLogin struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
 func (c *CustomDate) UnmarshalJSON(b []byte) (err error) {
 	c.Time, err = time.Parse(`"2006-01-02"`, string(b))
 	if err != nil {

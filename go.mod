@@ -14,7 +14,10 @@ require (
 	google.golang.org/protobuf v1.35.2
 )
 
-require github.com/swaggo/files/v2 v2.0.0 // indirect
+require (
+	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
+	github.com/swaggo/files/v2 v2.0.0 // indirect
+)
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect

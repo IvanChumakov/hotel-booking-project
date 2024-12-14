@@ -1,17 +1,17 @@
 package main
 
 import (
+	m "github.com/IvanChumakov/hotel-booking-project/hotel-lib/middleware"
 	"log"
 	"net"
 	"net/http"
 	"os"
 
-	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/middleware"
+	_ "github.com/IvanChumakov/hotel-booking-project/hotelservice/docs"
 	"github.com/IvanChumakov/hotel-booking-project/hotelservice/internal/api"
 	"github.com/IvanChumakov/hotel-booking-project/hotelservice/internal/app"
 	pb "github.com/IvanChumakov/hotel-booking-project/protos"
 	"github.com/joho/godotenv"
-	_ "github.com/IvanChumakov/hotel-booking-project/hotelservice/docs"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"google.golang.org/grpc"
@@ -26,6 +26,9 @@ func init() {
 // @title Swagger Hotel Service API
 // @version 1.0
 // @host localhost:8081
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 // @BasePath /
 func main() {
 	port, _ := os.LookupEnv("HOTEL_PORT")
@@ -34,15 +37,16 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/get_hotels", http.HandlerFunc(api.GetHotels))
-	mux.Handle("/add_hotel", http.HandlerFunc(api.AddHotel))
+	mux.Handle("/get_hotels", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.GetHotels))))
+	mux.Handle("/add_hotel", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.AddHotel))))
 	mux.Handle("/swagger/", httpSwagger.Handler(httpSwagger.URL("swagger/swagger/doc.json")))
+	mux.Handle("/register", m.LoggerMiddleware(http.HandlerFunc(api.Register)))
+	mux.Handle("/login", m.LoggerMiddleware(http.HandlerFunc(api.Login)))
 	http.Handle("/metrics", promhttp.Handler())
 
-	wrappedMux := middleware.NewMiddleware(mux)
 	go func() {
 		log.Printf("Starting server at port %s", port)
-		err := http.ListenAndServe(port, wrappedMux)
+		err := http.ListenAndServe(port, mux)
 		if err != nil {
 			log.Fatal(err)
 		}
