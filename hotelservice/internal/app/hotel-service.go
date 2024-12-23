@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/database"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/models"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	pb "github.com/IvanChumakov/hotel-booking-project/protos"
 )
 
@@ -15,8 +16,15 @@ func NewServer() *Server {
 	return &Server{}
 }
 
-func (s *Server) GetHotelData(_ context.Context, hotelData *pb.HotelData) (*pb.RoomsDataArray, error) {
-	rooms, err := GetHotelRoomsByName(hotelData.HotelName)
+func (s *Server) GetHotelData(ctx context.Context, hotelData *pb.HotelData) (*pb.RoomsDataArray, error) {
+	ctx, err := tracing.GetParentContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ctx, span := tracing.StartTracerSpan(ctx, "get-hotel-data")
+	defer span.End()
+
+	rooms, err := GetHotelRoomsByName(hotelData.HotelName, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -34,8 +42,11 @@ func (s *Server) GetHotelData(_ context.Context, hotelData *pb.HotelData) (*pb.R
 	return &roomsDataArr, nil
 }
 
-func GetAllHotels() ([]models.Hotels, error) {
-	hotels, err := database.GetAllHotels()
+func GetAllHotels(ctx context.Context) ([]models.Hotels, error) {
+	ctx, span := tracing.StartTracerSpan(ctx, "get_all_hotels_app")
+	defer span.End()
+
+	hotels, err := database.GetAllHotels(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -47,10 +58,16 @@ func GetAllHotels() ([]models.Hotels, error) {
 	return hotelsArr, nil
 }
 
-func GetHotelRoomsByName(name string) ([]models.Room, error) {
-	return database.GetRoomsByName(name)
+func GetHotelRoomsByName(name string, ctx context.Context) ([]models.Room, error) {
+	ctx, span := tracing.StartTracerSpan(ctx, "get-hotel-data-app")
+	defer span.End()
+
+	return database.GetRoomsByName(name, ctx)
 }
 
-func AddHotel(row models.Hotels) error {
-	return database.AddHotel(row)
+func AddHotel(row models.Hotels, ctx context.Context) error {
+	ctx, span := tracing.StartTracerSpan(ctx, "add_hotel_app")
+	defer span.End()
+
+	return database.AddHotel(row, ctx)
 }

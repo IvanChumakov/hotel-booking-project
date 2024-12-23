@@ -11,7 +11,11 @@ import (
 var secretKey = []byte("secret-key")
 
 func Register(user models.User) (string, error) {
-	exists, err := database.Exists(user, false)
+	exists, err := database.Exists(models.UserLogin{
+		Login:    user.Login,
+		Password: user.Password,
+	}, false)
+
 	if err != nil {
 		return "", err
 	}
@@ -29,15 +33,19 @@ func Register(user models.User) (string, error) {
 	return token, nil
 }
 
-func Login(user models.User) (string, error) {
-	exists, err := database.Exists(user, true)
+func Login(credentials models.UserLogin) (string, error) {
+	exists, err := database.Exists(credentials, true)
 	if err != nil {
 		return "", err
 	}
 	if !exists {
 		return "", &errors.AuthError{}
 	}
-	token, err := createToken(user)
+	foundUser, err := database.GetUser(credentials.Login)
+	if err != nil {
+		return "", err
+	}
+	token, err := createToken(foundUser)
 	if err != nil {
 		return "", err
 	}
@@ -45,8 +53,11 @@ func Login(user models.User) (string, error) {
 }
 
 func createToken(user models.User) (string, error) {
+	if user.Role == "" {
+		user.Role = "customer"
+	}
 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"aud":  user.Role,
+		"role": user.Role,
 		"name": user.Login,
 	})
 	token, err := claims.SignedString(secretKey)

@@ -24,9 +24,10 @@ type CustomDate struct {
 }
 
 type Hotels struct {
-	Id    uuid.UUID `json:"id"`
-	Name  string    `json:"name"`
-	Rooms []Room    `json:"room"`
+	Id         uuid.UUID `json:"id"`
+	Name       string    `json:"name"`
+	Rooms      []Room    `json:"room"`
+	OwnerLogin string
 }
 
 type Room struct {

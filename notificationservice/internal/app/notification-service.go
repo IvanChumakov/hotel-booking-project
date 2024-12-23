@@ -2,6 +2,9 @@ package app
 
 import (
 	"context"
+	"fmt"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
+	"google.golang.org/grpc/metadata"
 	"log"
 	"os"
 
@@ -12,12 +15,15 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func SendNotification(booking models.Booking) error {
+func SendNotification(booking models.Booking, ctx context.Context) error {
+	ctx, span := tracing.StartTracerSpan(ctx, "send-message")
+	defer span.End()
+
 	log.Print("sending notification to delivery system")
 	port, _ := os.LookupEnv("DELIVERY_PORT")
 
 	log.Printf("delivery-service%s", port)
-	conn, err := grpc.NewClient("delivery-service:50052", 
+	conn, err := grpc.NewClient("delivery-service:50052",
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("new client: %v", err)
@@ -33,7 +39,9 @@ func SendNotification(booking models.Booking) error {
 		To:         timestamppb.New(booking.To.Time),
 	}
 
-	_, err = client.SendNotification(context.Background(), &notification)
+	traceId := fmt.Sprintf("%s", span.SpanContext().TraceID())
+	ctx = metadata.AppendToOutgoingContext(ctx, "x-trace-id", traceId)
+	_, err = client.SendNotification(ctx, &notification)
 	if err != nil {
 		log.Fatalf("sending: %v", err)
 		return err

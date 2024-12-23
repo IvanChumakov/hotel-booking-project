@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	tracer "github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	_ "github.com/IvanChumakov/hotel-booking-project/hotelservice/docs"
 	"github.com/IvanChumakov/hotel-booking-project/hotelservice/internal/api"
 	"github.com/IvanChumakov/hotel-booking-project/hotelservice/internal/app"
@@ -35,8 +36,13 @@ func main() {
 	prometheusHost, _ := os.LookupEnv("PROMETHEUS_HOST")
 	prometheusPort, _ := os.LookupEnv("PROMETHEUS_PORT")
 
+	if err := tracer.NewTrace(); err != nil {
+		log.Fatalf("Error initializing tracing: %v", err)
+	}
+
 	mux := http.NewServeMux()
 
+	//eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoibG9naW4iLCJyb2xlIjoiY3VzdG9tZXIifQ.ITYJDLmEatyyllSmnH9q2ryiV9z1xeT2u4IoHKfGdCM
 	mux.Handle("/get_hotels", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.GetHotels))))
 	mux.Handle("/add_hotel", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.AddHotel))))
 	mux.Handle("/swagger/", httpSwagger.Handler(httpSwagger.URL("swagger/swagger/doc.json")))
@@ -60,7 +66,7 @@ func main() {
 		}
 	}()
 
-	lis, err := net.Listen("tcp", "localhost:50051")
+	lis, err := net.Listen("tcp", "hotel-service:50051")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

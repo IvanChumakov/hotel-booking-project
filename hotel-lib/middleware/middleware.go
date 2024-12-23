@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+type Claims struct {
+	Role  string `json:"role"`
+	Login string `json:"name"`
+	jwt.RegisteredClaims
+}
+
 var jwtKey = []byte("secret-key")
 
 func JWTTokenVerify(next http.Handler) http.Handler {
@@ -19,7 +25,8 @@ func JWTTokenVerify(next http.Handler) http.Handler {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		token, err := jwt.ParseWithClaims(tokenString, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
+		claims := &Claims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
@@ -29,6 +36,9 @@ func JWTTokenVerify(next http.Handler) http.Handler {
 			log.Logger.Error("токен невалидный")
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		}
+		r.Header.Set("role", claims.Role)
+		r.Header.Set("login", claims.Login)
+
 		next.ServeHTTP(w, r)
 	})
 }

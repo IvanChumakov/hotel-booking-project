@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	"github.com/IvanChumakov/hotel-booking-project/paymentservice/internal/api"
 	"github.com/joho/godotenv"
 	"log"
@@ -17,6 +18,9 @@ func init() {
 
 func main() {
 	port, _ := os.LookupEnv("PAYMENT_PORT")
+	if err := tracing.NewTrace(); err != nil {
+		log.Fatal(err)
+	}
 
 	mux := http.NewServeMux()
 	s := &http.Server{

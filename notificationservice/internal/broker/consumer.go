@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"encoding/json"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	"log"
 
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/models"
@@ -39,6 +40,9 @@ func (c *Consumer) ReadNotifications() {
 		for !iter.Done() {
 			record := iter.Next()
 			log.Print(string(record.Value))
+			traceId := string(record.Headers[0].Value)
+			ctxNew, _ := tracing.GetParentContextFromHeader(context.Background(), traceId)
+			ctx, span := tracing.StartTracerSpan(ctxNew, "read-message")
 
 			var notification models.Booking
 			if err := json.Unmarshal(record.Value, &notification); err != nil {
@@ -46,8 +50,9 @@ func (c *Consumer) ReadNotifications() {
 				continue
 			}
 
-			app.SendNotification(notification)
+			app.SendNotification(notification, ctx)
 			c.client.MarkCommitRecords(record)
+			span.End()
 		}
 	}
 }

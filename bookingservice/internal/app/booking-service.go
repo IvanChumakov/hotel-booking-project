@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	tracer "github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
+	"google.golang.org/grpc/metadata"
 	"io"
 	"log"
 	"net/http"
@@ -20,15 +22,26 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func GetAllBookings() ([]models.Booking, error) {
-	return database.GetAllBookings()
+func GetAllBookings(ctx context.Context) ([]models.Booking, error) {
+	ctx, span := tracer.StartTracerSpan(ctx, "get-all-bookings-app")
+	defer span.End()
+
+	return database.GetAllBookings(ctx)
 }
 
-func GetaBookingByName(name string) ([]models.Booking, error) {
-	return database.GetBookingsByHotelName(name)
+func GetaBookingByName(name string, ctx context.Context) ([]models.Booking, error) {
+	ctx, span := tracer.StartTracerSpan(ctx, "get-booking-by-name-app")
+	defer span.End()
+
+	return database.GetBookingsByHotelName(name, ctx)
 }
 
-func GetHotelRoomsWithPrice(booking models.Booking) ([]models.Room, error) {
+func GetHotelRoomsWithPrice(booking models.Booking, ctx context.Context) ([]models.Room, error) {
+	ctx, span := tracer.StartTracerSpan(ctx, "get-hotel-rooms-with-price")
+	defer span.End()
+	traceId := fmt.Sprintf("%s", span.SpanContext().TraceID())
+	ctx = metadata.AppendToOutgoingContext(ctx, "x-trace-id", traceId)
+
 	conn, err := grpc.NewClient("hotel-service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -37,7 +50,7 @@ func GetHotelRoomsWithPrice(booking models.Booking) ([]models.Room, error) {
 	defer conn.Close()
 
 	client := pb.NewBookingClient(conn)
-	response, err := client.GetHotelData(context.Background(), &pb.HotelData{
+	response, err := client.GetHotelData(ctx, &pb.HotelData{
 		HotelName: booking.HotelName,
 	})
 
@@ -57,8 +70,11 @@ func GetHotelRoomsWithPrice(booking models.Booking) ([]models.Room, error) {
 	return rooms, nil
 }
 
-func FilterRooms(booking models.Booking, allRooms []models.Room) ([]models.Room, error) {
-	booked, err := GetaBookingByName(booking.HotelName)
+func FilterRooms(booking models.Booking, allRooms []models.Room, ctx context.Context) ([]models.Room, error) {
+	ctx, span := tracer.StartTracerSpan(ctx, "filter-rooms-app")
+	defer span.End()
+
+	booked, err := GetaBookingByName(booking.HotelName, ctx)
 	if err != nil {
 		return allRooms, err
 	}
@@ -81,12 +97,15 @@ func FilterRooms(booking models.Booking, allRooms []models.Room) ([]models.Room,
 	return freeRooms, nil
 }
 
-func AddBooking(booking models.Booking) error {
-	return database.AddBooking(booking)
+func AddBooking(booking models.Booking, ctx context.Context) error {
+	return database.AddBooking(booking, ctx)
 }
 
-func MakePaymentOperation(booking models.Booking) error {
-	rooms, err := GetHotelRoomsWithPrice(booking)
+func MakePaymentOperation(booking models.Booking, ctx context.Context) error {
+	ctx, span := tracer.StartTracerSpan(ctx, "make-payment-operation-app")
+	defer span.End()
+
+	rooms, err := GetHotelRoomsWithPrice(booking, ctx)
 	if err != nil {
 		return err
 	}
@@ -110,13 +129,16 @@ func MakePaymentOperation(booking models.Booking) error {
 	client := http.Client{
 		Timeout: 100 * time.Second,
 	}
-	request, err := http.NewRequest(http.MethodPost,
+
+	traceId := fmt.Sprintf("%s", span.SpanContext().TraceID())
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		fmt.Sprintf("http://payment-service%s/payment", port),
 		bytes.NewBuffer(jsonData))
 
 	if err != nil {
 		return err
 	}
+	request.Header.Set("x-trace-id", traceId)
 	httpData, err := client.Do(request)
 	if err != nil {
 		return err
@@ -131,13 +153,16 @@ func MakePaymentOperation(booking models.Booking) error {
 	return nil
 }
 
-func SendNotification(booking models.Booking) error {
-	producer, err := broker.NewProducer("redpanda:9092", "booking-notifications")
+func SendNotification(booking models.Booking, ctx context.Context) error {
+	producer, err := broker.NewProducer("redpanda:9092", "new-topic")
 	if err != nil {
 		log.Print("sending message error: ", err.Error())
 		return err
 	}
 	log.Print("connection initialized")
-	producer.SendMessage(booking)
+	err = producer.SendMessage(booking, ctx)
+	if err != nil {
+		log.Print("sending message error: ", err.Error())
+	}
 	return nil
 }

@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/auth"
-	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/logger"
 	"io"
 	"net/http"
+
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/auth"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/logger"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 
 	customErros "github.com/IvanChumakov/hotel-booking-project/hotel-lib/errors"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/metrics"
@@ -29,12 +31,15 @@ var log = logger.New()
 // @Router       /get_hotels [get]
 func GetHotels(w http.ResponseWriter, r *http.Request) {
 	metric.IncRequestAllHotels()
+	ctx, span := tracing.StartTracerSpan(r.Context(), "get_hotels")
+	defer span.End()
+
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	hotelsArr, err := app.GetAllHotels()
+	hotelsArr, err := app.GetAllHotels(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -61,8 +66,18 @@ func GetHotels(w http.ResponseWriter, r *http.Request) {
 // @Router       /add_hotel [post]
 func AddHotel(w http.ResponseWriter, r *http.Request) {
 	metric.IncRequestAddHotels()
+	ctx, span := tracing.StartTracerSpan(r.Context(), "add_hotel")
+	defer span.End()
+
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	role := r.Header.Get("role")
+	login := r.Header.Get("login")
+	if role == "customer" {
+		http.Error(w, "Недостаточно привилегий", http.StatusUnauthorized)
+		log.Logger.Error("недостаточно привилегий")
 		return
 	}
 
@@ -74,13 +89,15 @@ func AddHotel(w http.ResponseWriter, r *http.Request) {
 	}
 	var row models.Hotels
 	err = json.Unmarshal(data, &row)
+	row.OwnerLogin = login
+
 	if err != nil {
 		log.Logger.Error("error while unmarshalling")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err = app.AddHotel(row)
+	err = app.AddHotel(row, ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -157,11 +174,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	user := models.User{
-		Login:    userLogin.Login,
-		Password: userLogin.Password,
-	}
-	token, err := auth.Login(user)
+	token, err := auth.Login(userLogin)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		var loginErr *customErros.AuthError

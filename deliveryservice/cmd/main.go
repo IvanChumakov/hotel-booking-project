@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	"net"
 	"os"
 
@@ -22,6 +23,9 @@ func init() {
 
 func main() {
 	port := os.Getenv("DELIVERY_PORT")
+	if err := tracing.NewTrace(); err != nil {
+		log.Logger.Error(err.Error())
+	}
 	lis, err := net.Listen("tcp", fmt.Sprintf("delivery-service%s", port))
 	if err != nil {
 		log.Logger.Error(fmt.Sprintf("failed to listen: %s", err.Error()))

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	"io"
 	"log"
 	"net/http"
@@ -14,11 +15,14 @@ import (
 var metric = metrics.NewMetrics()
 
 func GetBookings(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracing.StartTracerSpan(r.Context(), "get-all-bookings")
+	defer span.End()
+
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 
-	bookings, err := app.GetAllBookings()
+	bookings, err := app.GetAllBookings(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
@@ -33,6 +37,9 @@ func GetBookings(w http.ResponseWriter, r *http.Request) {
 
 func GetBookingsByName(w http.ResponseWriter, r *http.Request) {
 	log.Print("/get_bookings_by_name")
+	ctx, span := tracing.StartTracerSpan(r.Context(), "get-bookings-by-name")
+	defer span.End()
+
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -47,7 +54,7 @@ func GetBookingsByName(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	bookings, err := app.GetaBookingByName(hotel.Name)
+	bookings, err := app.GetaBookingByName(hotel.Name, ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
@@ -61,6 +68,9 @@ func GetBookingsByName(w http.ResponseWriter, r *http.Request) {
 
 func GetFreeRoomsByDate(w http.ResponseWriter, r *http.Request) {
 	log.Print("/get_free_rooms_by_date")
+	ctx, span := tracing.StartTracerSpan(r.Context(), "get-free-rooms-by-date")
+	defer span.End()
+
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -77,8 +87,8 @@ func GetFreeRoomsByDate(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	rooms, _ := app.GetHotelRoomsWithPrice(booking)
-	freeRooms, err := app.FilterRooms(booking, rooms)
+	rooms, _ := app.GetHotelRoomsWithPrice(booking, ctx)
+	freeRooms, err := app.FilterRooms(booking, rooms, ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -95,6 +105,9 @@ func GetFreeRoomsByDate(w http.ResponseWriter, r *http.Request) {
 func AddBooking(w http.ResponseWriter, r *http.Request) {
 	log.Print("/add_booking")
 	metric.IncRequestAddBooking()
+	ctx, span := tracing.StartTracerSpan(r.Context(), "add-booking")
+	defer span.End()
+
 	if http.MethodPost != r.Method {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -110,16 +123,23 @@ func AddBooking(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = app.MakePaymentOperation(booking)
+	err = app.MakePaymentOperation(booking, ctx)
 	if err != nil {
 		http.Error(w, "Failed to make payment operation: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	_ = app.SendNotification(booking)
+	_ = app.SendNotification(booking, ctx)
 	w.WriteHeader(http.StatusOK)
 }
 
 func PaymentCallBack(w http.ResponseWriter, r *http.Request) {
+	ctx, err := tracing.GetParentContextFromHeader(r.Context(), r.Header.Get("x-trace-id"))
+	if err != nil {
+		http.Error(w, "Failed to get parent context: "+err.Error(), http.StatusInternalServerError)
+	}
+	ctx, span := tracing.StartTracerSpan(ctx, "payment-call-back")
+	defer span.End()
+
 	log.Print("/payment_callback")
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -137,7 +157,7 @@ func PaymentCallBack(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.AddBooking(paymentInfo.Booking)
+	err = app.AddBooking(paymentInfo.Booking, ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}

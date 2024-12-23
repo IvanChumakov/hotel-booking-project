@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	"log"
 	"time"
 
@@ -9,8 +10,11 @@ import (
 )
 
 func main() {
-	time.Sleep(2 * time.Second) //решает все
-	topic := "booking-notifications"
+	time.Sleep(15 * time.Second)
+	topic := "new-topic"
+	if err := tracing.NewTrace(); err != nil {
+		log.Fatal(err)
+	}
 	admin, err := broker.New("redpanda:9092")
 	if err != nil {
 		log.Print("initializing redpanda client err:", err)

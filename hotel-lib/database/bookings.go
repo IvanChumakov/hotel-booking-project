@@ -1,13 +1,18 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/models"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	"github.com/google/uuid"
 	"log"
 )
 
-func GetAllBookings() ([]models.Booking, error) {
+func GetAllBookings(ctx context.Context) ([]models.Booking, error) {
+	_, span := tracing.StartTracerSpan(ctx, "get-all-bookings-database")
+	defer span.End()
+
 	query := NewSqlBuilder()
 	query = query.Select(make([]string, 0)).From("bookings")
 
@@ -34,7 +39,10 @@ func GetAllBookings() ([]models.Booking, error) {
 	return bookings, nil
 }
 
-func GetBookingsByHotelName(hotelName string) ([]models.Booking, error) {
+func GetBookingsByHotelName(hotelName string, ctx context.Context) ([]models.Booking, error) {
+	_, span := tracing.StartTracerSpan(ctx, "get-bookings-by-name-database")
+	defer span.End()
+
 	query := NewSqlBuilder()
 	query = query.Select(make([]string, 0)).From("bookings").Where(fmt.Sprintf("hotel_name = '%s'", hotelName))
 
@@ -60,7 +68,10 @@ func GetBookingsByHotelName(hotelName string) ([]models.Booking, error) {
 	return bookings, nil
 }
 
-func AddBooking(booking models.Booking) error {
+func AddBooking(booking models.Booking, ctx context.Context) error {
+	_, span := tracing.StartTracerSpan(ctx, "add-booking-database")
+	defer span.End()
+
 	query := NewSqlBuilder()
 	fromParsed := booking.From.Time.Format("2006-01-02")
 	toParsed := booking.To.Time.Format("2006-01-02")

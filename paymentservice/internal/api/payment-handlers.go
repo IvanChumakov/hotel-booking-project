@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/models"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	"github.com/IvanChumakov/hotel-booking-project/paymentservice/internal/app"
 	"io"
 	"log"
@@ -14,6 +15,15 @@ import (
 )
 
 func MakeOperation(w http.ResponseWriter, r *http.Request) {
+	ctx, err := tracing.GetParentContextFromHeader(r.Context(), r.Header.Get("x-trace-id"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Fatal(err)
+	}
+
+	ctx, span := tracing.StartTracerSpan(ctx, "make_operation")
+	defer span.End()
+
 	log.Print("/payment_operation")
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -42,7 +52,7 @@ func MakeOperation(w http.ResponseWriter, r *http.Request) {
 
 	var statusCode int
 	if rnd.Int64()%2 == 0 {
-		statusCode, err = client.SendCallback(paymentInfo)
+		statusCode, err = client.SendCallback(paymentInfo, ctx)
 	} else {
 		log.Print("payment failure (преднамеренный)")
 		http.Error(w, "Payment failure (преднамеренный)", http.StatusBadRequest)

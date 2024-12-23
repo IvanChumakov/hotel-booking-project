@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func Exists(user models.User, withPassword bool) (bool, error) {
+func Exists(user models.UserLogin, withPassword bool) (bool, error) {
 	query := NewSqlBuilder()
 
 	var condition string
@@ -51,4 +51,30 @@ func AddUser(user models.User) error {
 		return err
 	}
 	return nil
+}
+
+func GetUser(login string) (models.User, error) {
+	query := NewSqlBuilder()
+	query = query.Select([]string{}).From("users").Where(fmt.Sprintf("login = '%s'", login))
+
+	db, err := InitConnection("hotel-bookings")
+	if err != nil {
+		return models.User{}, err
+	}
+	defer db.Close()
+
+	log.Print(query)
+	var user models.User
+
+	rows, err := db.GetAll(query)
+	if err != nil {
+		return models.User{}, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&user.Id, &user.Role, &user.Login, &user.Password)
+		if err != nil {
+			return models.User{}, err
+		}
+	}
+	return user, nil
 }
