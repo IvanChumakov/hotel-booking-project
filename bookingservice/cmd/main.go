@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	m "github.com/IvanChumakov/hotel-booking-project/hotel-lib/middleware"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"net/http"
 	"os"
 
+	_ "github.com/IvanChumakov/hotel-booking-project/bookingservice/docs"
 	"github.com/IvanChumakov/hotel-booking-project/bookingservice/internal/api"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/logger"
 	"github.com/joho/godotenv"
@@ -20,6 +23,13 @@ func init() {
 	}
 }
 
+// @title Swagger Booking Service API
+// @version 1.0
+// @host localhost:8080
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @BasePath /
 func main() {
 	port, _ := os.LookupEnv("METRICS_BOOKING")
 	serverPort, _ := os.LookupEnv("BOOKING_PORT")
@@ -31,11 +41,14 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/get_bookings", http.HandlerFunc(api.GetBookings))
-	mux.Handle("/get_bookings_by_name", http.HandlerFunc(api.GetBookingsByName))
-	mux.Handle("/get_free_rooms", http.HandlerFunc(api.GetFreeRoomsByDate))
-	mux.Handle("/add_booking", http.HandlerFunc(api.AddBooking))
-	mux.Handle("/payment_callback", http.HandlerFunc(api.PaymentCallBack))
+	mux.Handle("/get_bookings", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.GetBookings))))
+	mux.Handle("/get_bookings_by_name", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.GetBookingsByName))))
+	mux.Handle("/get_free_rooms", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.GetFreeRoomsByDate))))
+	mux.Handle("/add_booking", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.AddBooking))))
+	mux.Handle("/payment_callback", m.LoggerMiddleware(http.HandlerFunc(api.PaymentCallBack)))
+	mux.Handle("/register", m.LoggerMiddleware(http.HandlerFunc(api.Register)))
+	mux.Handle("/login", m.LoggerMiddleware(http.HandlerFunc(api.Login)))
+	mux.Handle("/swagger/", httpSwagger.Handler(httpSwagger.URL("swagger/swagger/doc.json")))
 	http.Handle("/metrics", promhttp.Handler())
 
 	go func() {

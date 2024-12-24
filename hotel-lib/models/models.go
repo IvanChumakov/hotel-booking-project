@@ -19,6 +19,13 @@ type Booking struct {
 	To         CustomDate `json:"to"`
 }
 
+type BookingSwag struct {
+	HotelName  string `json:"hotel_name"`
+	RoomNumber int    `json:"room_number"`
+	From       string `json:"from"`
+	To         string `json:"to"`
+}
+
 type CustomDate struct {
 	time.Time
 }
@@ -28,6 +35,16 @@ type Hotels struct {
 	Name       string    `json:"name"`
 	Rooms      []Room    `json:"room"`
 	OwnerLogin string
+}
+
+type HotelName struct {
+	Name string `json:"name"`
+}
+
+type DateWithHotelName struct {
+	From      string `json:"from"`
+	To        string `json:"to"`
+	HotelName string `json:"name"`
 }
 
 type Room struct {

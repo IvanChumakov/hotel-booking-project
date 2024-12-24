@@ -2,9 +2,13 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/auth"
+	customErros "github.com/IvanChumakov/hotel-booking-project/hotel-lib/errors"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/logger"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/IvanChumakov/hotel-booking-project/bookingservice/internal/app"
@@ -13,8 +17,19 @@ import (
 )
 
 var metric = metrics.NewMetrics()
+var log = logger.New()
 
+// GetBookings godoc
+// @Summary      Получить все бронирования
+// @Description  Получить список всех бронирований
+// @Tags         Bookings
+// @Accept		 application/x-www-form-urlencoded
+// @Security BearerAuth
+// @Produce      json
+// @Success      200  {array}  models.BookingSwag
+// @Router       /get_bookings [get]
 func GetBookings(w http.ResponseWriter, r *http.Request) {
+	metric.IncRequestGetBookings()
 	ctx, span := tracing.StartTracerSpan(r.Context(), "get-all-bookings")
 	defer span.End()
 
@@ -35,8 +50,18 @@ func GetBookings(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// GetBookingsByName godoc
+// @Summary      Получить все бронирования по названию отеля
+// @Description  Получить список всех бронирований по названию отеля
+// @Tags         Bookings
+// @Accept		 json
+// @Param hotelName body models.HotelName true "Название отеля"
+// @Security BearerAuth
+// @Produce      json
+// @Success      200  {array}  models.BookingSwag
+// @Router       /get_bookings_by_name [get]
 func GetBookingsByName(w http.ResponseWriter, r *http.Request) {
-	log.Print("/get_bookings_by_name")
+	metric.IncRequestGetBookingsByName()
 	ctx, span := tracing.StartTracerSpan(r.Context(), "get-bookings-by-name")
 	defer span.End()
 
@@ -66,8 +91,18 @@ func GetBookingsByName(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// GetFreeRoomsByDate godoc
+// @Summary      Получить свободные комнаты по дате и названию отеля
+// @Description  Получить список всех свободных комнат по дате и названию отеля
+// @Tags         Bookings
+// @Accept		 json
+// @Param DateWithHotelName body models.DateWithHotelName true "Название отеля с датой"
+// @Security BearerAuth
+// @Produce      json
+// @Success      200  {array}  models.Room
+// @Router       /get_free_rooms [get]
 func GetFreeRoomsByDate(w http.ResponseWriter, r *http.Request) {
-	log.Print("/get_free_rooms_by_date")
+	metric.IncRequestGetFreeRoomsByDate()
 	ctx, span := tracing.StartTracerSpan(r.Context(), "get-free-rooms-by-date")
 	defer span.End()
 
@@ -102,14 +137,29 @@ func GetFreeRoomsByDate(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// AddBooking godoc
+// @Summary      Добавить бронирование
+// @Description  Добавить информацию о бронировании в базу
+// @Tags         Bookings
+// @Accept		 json
+// @Param bookingInfo body models.BookingSwag true "Информация о бронировании"
+// @Security BearerAuth
+// @Produce      json
+// @Success      200
+// @Router       /add_booking [post]
 func AddBooking(w http.ResponseWriter, r *http.Request) {
-	log.Print("/add_booking")
 	metric.IncRequestAddBooking()
 	ctx, span := tracing.StartTracerSpan(r.Context(), "add-booking")
 	defer span.End()
 
 	if http.MethodPost != r.Method {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	role := r.Header.Get("role")
+	if role == "customer" {
+		http.Error(w, "Недостаточно привилегий", http.StatusUnauthorized)
+		log.Logger.Error("недостаточно привилегий")
 		return
 	}
 	data, err := io.ReadAll(r.Body)
@@ -140,7 +190,6 @@ func PaymentCallBack(w http.ResponseWriter, r *http.Request) {
 	ctx, span := tracing.StartTracerSpan(ctx, "payment-call-back")
 	defer span.End()
 
-	log.Print("/payment_callback")
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -161,5 +210,89 @@ func PaymentCallBack(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// Register godoc
+// @Summary      Регистрация
+// @Description  Зарегистрироваться в сервисе
+// @Tags         Auth
+// @Accept		 json
+// @Produce      json
+// @Param 		 user body models.User true "Создать пользователя"
+// @Success      200  {string} string
+// @Router       /register [post]
+func Register(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Logger.Error("error while reading")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var user models.User
+	err = json.Unmarshal(data, &user)
+	if err != nil {
+		log.Logger.Error("error while unmarshalling")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	token, err := auth.Register(user)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		var loginErr *customErros.LoginExistsError
+
+		if errors.As(err, &loginErr) {
+			_, _ = fmt.Fprintf(w, err.Error())
+		}
+		log.Logger.Error("error while registering: ", err.Error())
+		return
+	}
+	_ = json.NewEncoder(w).Encode(token)
+	w.WriteHeader(http.StatusOK)
+}
+
+// Login godoc
+// @Summary      Вход
+// @Description  Войти в аккаунт
+// @Tags         Auth
+// @Accept		 json
+// @Produce      json
+// @Param 		 user body models.UserLogin true "Данные пользователя"
+// @Success      200  {string} string
+// @Router       /login [post]
+func Login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Logger.Error("error while reading")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var userLogin models.UserLogin
+	err = json.Unmarshal(data, &userLogin)
+	if err != nil {
+		log.Logger.Error("error while unmarshalling")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	token, err := auth.Login(userLogin)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		var loginErr *customErros.AuthError
+
+		if errors.As(err, &loginErr) {
+			_, _ = fmt.Fprintf(w, err.Error())
+		}
+		log.Logger.Error("error while login: ", err.Error())
+		return
+	}
+	_ = json.NewEncoder(w).Encode(token)
 	w.WriteHeader(http.StatusOK)
 }

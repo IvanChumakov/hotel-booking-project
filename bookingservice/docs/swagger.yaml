@@ -1,0 +1,204 @@
+definitions:
+  models.BookingSwag:
+    properties:
+      from:
+        type: string
+      hotel_name:
+        type: string
+      room_number:
+        type: integer
+      to:
+        type: string
+    type: object
+  models.DateWithHotelName:
+    properties:
+      from:
+        type: string
+      name:
+        type: string
+      to:
+        type: string
+    type: object
+  models.HotelName:
+    properties:
+      name:
+        type: string
+    type: object
+  models.Room:
+    properties:
+      hotel_id:
+        type: string
+      id:
+        type: string
+      price:
+        type: integer
+      room_number:
+        type: integer
+    type: object
+  models.User:
+    properties:
+      id:
+        type: string
+      login:
+        type: string
+      password:
+        type: string
+      role:
+        type: string
+    type: object
+  models.UserLogin:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  title: Swagger Booking Service API
+  version: "1.0"
+paths:
+  /add_booking:
+    post:
+      consumes:
+      - application/json
+      description: Добавить информацию о бронировании в базу
+      parameters:
+      - description: Информация о бронировании
+        in: body
+        name: bookingInfo
+        required: true
+        schema:
+          $ref: '#/definitions/models.BookingSwag'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - BearerAuth: []
+      summary: Добавить бронирование
+      tags:
+      - Bookings
+  /get_bookings:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Получить список всех бронирований
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.BookingSwag'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Получить все бронирования
+      tags:
+      - Bookings
+  /get_bookings_by_name:
+    get:
+      consumes:
+      - application/json
+      description: Получить список всех бронирований по названию отеля
+      parameters:
+      - description: Название отеля
+        in: body
+        name: hotelName
+        required: true
+        schema:
+          $ref: '#/definitions/models.HotelName'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.BookingSwag'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Получить все бронирования по названию отеля
+      tags:
+      - Bookings
+  /get_free_rooms:
+    get:
+      consumes:
+      - application/json
+      description: Получить список всех свободных комнат по дате и названию отеля
+      parameters:
+      - description: Название отеля с датой
+        in: body
+        name: DateWithHotelName
+        required: true
+        schema:
+          $ref: '#/definitions/models.DateWithHotelName'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Room'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Получить свободные комнаты по дате и названию отеля
+      tags:
+      - Bookings
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Войти в аккаунт
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Вход
+      tags:
+      - Auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Зарегистрироваться в сервисе
+      parameters:
+      - description: Создать пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Регистрация
+      tags:
+      - Auth
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
