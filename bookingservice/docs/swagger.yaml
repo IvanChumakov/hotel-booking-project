@@ -10,20 +10,6 @@ definitions:
       to:
         type: string
     type: object
-  models.DateWithHotelName:
-    properties:
-      from:
-        type: string
-      name:
-        type: string
-      to:
-        type: string
-    type: object
-  models.HotelName:
-    properties:
-      name:
-        type: string
-    type: object
   models.Room:
     properties:
       hotel_id:
@@ -106,12 +92,10 @@ paths:
       - application/json
       description: Получить список всех бронирований по названию отеля
       parameters:
-      - description: Название отеля
-        in: body
-        name: hotelName
-        required: true
-        schema:
-          $ref: '#/definitions/models.HotelName'
+      - description: имя отеля
+        in: query
+        name: name
+        type: string
       produces:
       - application/json
       responses:
@@ -132,12 +116,18 @@ paths:
       - application/json
       description: Получить список всех свободных комнат по дате и названию отеля
       parameters:
-      - description: Название отеля с датой
-        in: body
-        name: DateWithHotelName
-        required: true
-        schema:
-          $ref: '#/definitions/models.DateWithHotelName'
+      - description: имя отеля
+        in: query
+        name: name
+        type: string
+      - description: дата заезда в формате 2006-01-02
+        in: query
+        name: from
+        type: string
+      - description: дата отъезда в формате 2006-01-02
+        in: query
+        name: to
+        type: string
       produces:
       - application/json
       responses:

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/errors"
 	tracer "github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	"google.golang.org/grpc/metadata"
 	"io"
@@ -106,14 +107,21 @@ func MakePaymentOperation(booking models.Booking, ctx context.Context) error {
 	defer span.End()
 
 	rooms, err := GetHotelRoomsWithPrice(booking, ctx)
+	freeRooms, err := FilterRooms(booking, rooms, ctx)
+
 	if err != nil {
 		return err
 	}
 	var finalPrice int
-	for _, room := range rooms {
+	for _, room := range freeRooms {
 		if room.RoomNumber == booking.RoomNumber {
 			finalPrice = room.Price * int(booking.To.Time.Sub(booking.From.Time).Hours()/24.0)
 			break
+		}
+	}
+	if finalPrice == 0 {
+		return &errors.RoomAlreadyTakenError{
+			Room: booking.RoomNumber,
 		}
 	}
 	paymentInfo := models.PaymentInfo{

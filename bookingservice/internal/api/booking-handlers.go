@@ -10,6 +10,7 @@ import (
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/IvanChumakov/hotel-booking-project/bookingservice/internal/app"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/metrics"
@@ -55,7 +56,7 @@ func GetBookings(w http.ResponseWriter, r *http.Request) {
 // @Description  Получить список всех бронирований по названию отеля
 // @Tags         Bookings
 // @Accept		 json
-// @Param hotelName body models.HotelName true "Название отеля"
+// @Param name    query     string  false  "имя отеля"
 // @Security BearerAuth
 // @Produce      json
 // @Success      200  {array}  models.BookingSwag
@@ -69,14 +70,9 @@ func GetBookingsByName(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 
-	data, err := io.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-	}
-	var hotel models.Hotels
-	err = json.Unmarshal(data, &hotel)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	name := r.URL.Query().Get("name")
+	hotel := models.Hotels{
+		Name: name,
 	}
 
 	bookings, err := app.GetaBookingByName(hotel.Name, ctx)
@@ -96,7 +92,9 @@ func GetBookingsByName(w http.ResponseWriter, r *http.Request) {
 // @Description  Получить список всех свободных комнат по дате и названию отеля
 // @Tags         Bookings
 // @Accept		 json
-// @Param DateWithHotelName body models.DateWithHotelName true "Название отеля с датой"
+// @Param name    query     string  false  "имя отеля"
+// @Param from    query     string  false  "дата заезда в формате 2006-01-02"
+// @Param to    query     string  false  "дата отъезда в формате 2006-01-02"
 // @Security BearerAuth
 // @Produce      json
 // @Success      200  {array}  models.Room
@@ -111,16 +109,28 @@ func GetFreeRoomsByDate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := io.ReadAll(r.Body)
+	name := r.URL.Query().Get("name")
+	from := r.URL.Query().Get("from")
+	to := r.URL.Query().Get("to")
+
+	fromParsed, err := time.Parse("2006-01-02", from)
 	if err != nil {
+		http.Error(w, "неправильный формат даты from", http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	var booking models.Booking
-	err = json.Unmarshal(data, &booking)
+
+	toParsed, err := time.Parse("2006-01-02", to)
 	if err != nil {
+		http.Error(w, "неправильный формат даты from", http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
+	}
+
+	booking := models.Booking{
+		HotelName: name,
+		From:      models.CustomDate{Time: fromParsed},
+		To:        models.CustomDate{Time: toParsed},
 	}
 	rooms, _ := app.GetHotelRoomsWithPrice(booking, ctx)
 	freeRooms, err := app.FilterRooms(booking, rooms, ctx)
@@ -157,7 +167,7 @@ func AddBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	role := r.Header.Get("role")
-	if role == "customer" {
+	if role == "hotelier" {
 		http.Error(w, "Недостаточно привилегий", http.StatusUnauthorized)
 		log.Logger.Error("недостаточно привилегий")
 		return

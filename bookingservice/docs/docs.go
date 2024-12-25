@@ -102,13 +102,10 @@ const docTemplate = `{
                 "summary": "Получить все бронирования по названию отеля",
                 "parameters": [
                     {
-                        "description": "Название отеля",
-                        "name": "hotelName",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.HotelName"
-                        }
+                        "type": "string",
+                        "description": "имя отеля",
+                        "name": "name",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -144,13 +141,22 @@ const docTemplate = `{
                 "summary": "Получить свободные комнаты по дате и названию отеля",
                 "parameters": [
                     {
-                        "description": "Название отеля с датой",
-                        "name": "DateWithHotelName",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.DateWithHotelName"
-                        }
+                        "type": "string",
+                        "description": "имя отеля",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "дата заезда в формате 2006-01-02",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "дата отъезда в формате 2006-01-02",
+                        "name": "to",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -249,28 +255,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "to": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.DateWithHotelName": {
-            "type": "object",
-            "properties": {
-                "from": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "to": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.HotelName": {
-            "type": "object",
-            "properties": {
-                "name": {
                     "type": "string"
                 }
             }
