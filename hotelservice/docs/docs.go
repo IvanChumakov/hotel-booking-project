@@ -68,7 +68,7 @@ const docTemplate = `{
                 "tags": [
                     "Hotels"
                 ],
-                "summary": "Получить все отели",
+                "summary": "Получить все отели.",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -159,6 +159,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "ownerLogin": {
                     "type": "string"
                 },
                 "room": {

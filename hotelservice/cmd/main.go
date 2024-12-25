@@ -42,7 +42,6 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	//eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoibG9naW4iLCJyb2xlIjoiY3VzdG9tZXIifQ.ITYJDLmEatyyllSmnH9q2ryiV9z1xeT2u4IoHKfGdCM
 	mux.Handle("/get_hotels", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.GetHotels))))
 	mux.Handle("/add_hotel", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.AddHotel))))
 	mux.Handle("/swagger/", httpSwagger.Handler(httpSwagger.URL("swagger/swagger/doc.json")))

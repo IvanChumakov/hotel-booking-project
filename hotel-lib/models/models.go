@@ -37,16 +37,6 @@ type Hotels struct {
 	OwnerLogin string
 }
 
-type HotelName struct {
-	Name string `json:"name"`
-}
-
-type DateWithHotelName struct {
-	From      string `json:"from"`
-	To        string `json:"to"`
-	HotelName string `json:"name"`
-}
-
 type Room struct {
 	Id         uuid.UUID `json:"id,omitempty"`
 	Price      int       `json:"price"`

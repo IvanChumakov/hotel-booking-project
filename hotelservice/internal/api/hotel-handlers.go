@@ -21,7 +21,7 @@ var metric = metrics.NewMetrics()
 var log = logger.New()
 
 // GetHotels godoc
-// @Summary      Получить все отели
+// @Summary      Получить все отели.
 // @Description  Получить список всех отелей с номерами
 // @Tags         Hotels
 // @Accept		 application/x-www-form-urlencoded

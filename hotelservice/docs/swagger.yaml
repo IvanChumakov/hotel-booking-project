@@ -5,6 +5,8 @@ definitions:
         type: string
       name:
         type: string
+      ownerLogin:
+        type: string
       room:
         items:
           $ref: '#/definitions/models.Room'
@@ -83,7 +85,7 @@ paths:
             type: array
       security:
       - BearerAuth: []
-      summary: Получить все отели
+      summary: Получить все отели.
       tags:
       - Hotels
   /login:
