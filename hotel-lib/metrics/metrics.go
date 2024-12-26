@@ -40,11 +40,13 @@ func NewMetrics() *Metrics {
 		Name: "request_get_bookings_by_name",
 		Help: "Кол-во запросов на получение бронирований по имени отеля",
 	}, []string{})
+	prometheus.MustRegister(requestGetBookingsByName)
 
 	requestGetFreeRoomsByDate := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "request_get_free_rooms_by_date",
 		Help: "Кол-во запросов на получение свободных комнат по дате и отелю",
 	}, []string{})
+	prometheus.MustRegister(requestGetFreeRoomsByDate)
 
 	return &Metrics{
 		requestAllHotels:          requestAllHotels,

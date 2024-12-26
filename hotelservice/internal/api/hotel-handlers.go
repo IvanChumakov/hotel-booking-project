@@ -128,7 +128,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	err = json.Unmarshal(data, &user)
 	if err != nil {
-		log.Logger.Error("error while unmarshalling")
+		//log.Logger.Error("error while unmarshalling")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -140,7 +140,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		if errors.As(err, &loginErr) {
 			_, _ = fmt.Fprintf(w, err.Error())
 		}
-		log.Logger.Error("error while registering: ", err.Error())
+		//log.Logger.Error("error while registering: ", err.Error())
 		return
 	}
 	_ = json.NewEncoder(w).Encode(token)
@@ -182,7 +182,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		if errors.As(err, &loginErr) {
 			_, _ = fmt.Fprintf(w, err.Error())
 		}
-		log.Logger.Error("error while login: ", err.Error())
+		//log.Logger.Error("error while login: ", err.Error())
 		return
 	}
 	_ = json.NewEncoder(w).Encode(token)
