@@ -258,7 +258,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		if errors.As(err, &loginErr) {
 			_, _ = fmt.Fprintf(w, err.Error())
 		}
-		log.Logger.Error("error while registering: ", err.Error())
+		log.Logger.Error("error while registering: ", err.Error(), nil)
 		return
 	}
 	_ = json.NewEncoder(w).Encode(token)
@@ -300,7 +300,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		if errors.As(err, &loginErr) {
 			_, _ = fmt.Fprintf(w, err.Error())
 		}
-		log.Logger.Error("error while login: ", err.Error())
+		log.Logger.Error("error while login: ", err.Error(), nil)
 		return
 	}
 	_ = json.NewEncoder(w).Encode(token)

@@ -33,7 +33,7 @@ func TestAddHotel(t *testing.T) {
 		Rooms: []models.Room{
 			{
 				Price:      200,
-				RoomNumber: 123,
+				RoomNumber: 111,
 			},
 		},
 	}
