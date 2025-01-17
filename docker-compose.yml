@@ -9,6 +9,8 @@ volumes:
   redpanda: null
   postgres_data:
   prometheus:
+  redis_data:
+    driver: local
 
 services:
   redpanda:
@@ -170,6 +172,18 @@ services:
         - "9411:9411"
         - "16686:16686"
         - "14268:14268"
+      networks:
+        - hotel-booking-network
+  
+  redis:
+      image: docker.io/bitnami/redis:7.4
+      environment:
+        - ALLOW_EMPTY_PASSWORD=yes
+        - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+      ports:
+        - '6379:6379'
+      volumes:
+        - 'redis_data:/bitnami/redis/data'
       networks:
         - hotel-booking-network
 

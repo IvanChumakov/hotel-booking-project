@@ -42,7 +42,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.Handle("/get_bookings", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.GetBookings))))
-	mux.Handle("/get_bookings_by_name", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.GetBookingsByName))))
+	mux.Handle("/get_bookings_by_name", m.JWTTokenVerify(m.LoggerMiddleware(m.CachedQuery(http.HandlerFunc(api.GetBookingsByName)))))
 	mux.Handle("/get_free_rooms", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.GetFreeRoomsByDate))))
 	mux.Handle("/add_booking", m.JWTTokenVerify(m.LoggerMiddleware(http.HandlerFunc(api.AddBooking))))
 	mux.Handle("/payment_callback", m.LoggerMiddleware(http.HandlerFunc(api.PaymentCallBack)))

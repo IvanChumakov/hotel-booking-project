@@ -4,13 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/auth"
-	customErros "github.com/IvanChumakov/hotel-booking-project/hotel-lib/errors"
-	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/logger"
-	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/auth"
+	customErros "github.com/IvanChumakov/hotel-booking-project/hotel-lib/errors"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/logger"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/redis"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/tracing"
 
 	"github.com/IvanChumakov/hotel-booking-project/bookingservice/internal/app"
 	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/metrics"
@@ -80,9 +82,21 @@ func GetBookingsByName(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(bookings)
+	
+	jsonData, _ := json.Marshal(bookings)
+	w.Write(jsonData)
+	
+	redisClient, err := redis.NewClient()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	
+	err = redisClient.SaveJSON(name, jsonData)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "ошибка записи данных в redis", 500)
+		return
 	}
 	w.WriteHeader(http.StatusOK)
 }

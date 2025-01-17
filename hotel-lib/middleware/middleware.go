@@ -2,10 +2,12 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/logger"
-	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"time"
+
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/logger"
+	"github.com/IvanChumakov/hotel-booking-project/hotel-lib/redis"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type Claims struct {
@@ -49,5 +51,25 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 		start := time.Now()
 		next.ServeHTTP(w, r)
 		log.Logger.Info(fmt.Sprintf("%s %s %v", r.Method, r.URL.RequestURI(), time.Since(start)))
+	})
+}
+
+func CachedQuery(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log := logger.New()
+
+		redisClient, err := redis.NewClient()
+		if err != nil {
+			log.Logger.Error(fmt.Sprintf("ошибка подключения к redis: %s", err.Error()))
+			http.Error(w, "Redis connection error", http.StatusBadGateway)
+			return
+		}
+
+		ok, data := redisClient.GetData(r.URL.Query().Get("name"))
+		if ok {
+			w.Write([]byte(data))
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
 }
